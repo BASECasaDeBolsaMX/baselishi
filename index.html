@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f1f3f8">
+  <meta name="description" content="Panel editable de posiciones y cálculo de rentabilidad.">
+  <title>Portfolio Pro | Posiciones</title>
+  <style>
+    :root {
+      --page: #f1f3f8;
+      --card: #ffffff;
+      --ink: #171b27;
+      --muted: #858da0;
+      --line: #e9ecf2;
+      --blue: #1764f5;
+      --blue-soft: #eaf1ff;
+      --green: #149b65;
+      --red: #df4c59;
+      --shadow: 0 18px 50px rgba(28, 42, 74, .07);
+      --radius: 26px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--page);
+      color: var(--ink);
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    .app { width: min(100%, 980px); margin: 0 auto; padding: 24px 22px 110px; }
+    .topbar { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:24px; }
+    .brand { display:flex; align-items:center; gap:12px; min-width:0; }
+    .brand-mark {
+      width:44px; height:44px; display:grid; place-items:center; flex:none;
+      color:white; border-radius:15px; font-weight:900;
+      background:linear-gradient(145deg,#3279ff,#1354e8);
+      box-shadow:0 8px 20px #1764f52b;
+    }
+    .brand-name { font-weight:850; letter-spacing:-.5px; font-size:19px; }
+    .brand-sub { color:var(--muted); font-size:12px; margin-top:3px; }
+    .top-actions { display:flex; gap:9px; }
+    .small-btn { border:1px solid #e2e7f0; background:white; color:#39445b; border-radius:12px; padding:10px 13px; font-size:13px; font-weight:700; }
+    .small-btn.primary { color:white; border-color:var(--blue); background:var(--blue); }
+    .tabs { display:flex; gap:10px; overflow-x:auto; padding:0 0 5px; margin-bottom:22px; scrollbar-width:none; }
+    .tab { white-space:nowrap; border:1px solid transparent; padding:13px 22px; border-radius:17px; color:#9097a8; background:#ffffffb5; font-weight:700; }
+    .tab.active { color:white; background:var(--blue); box-shadow:0 8px 18px #1764f52b; }
+    .summary-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; margin-bottom:20px; }
+    .summary-card { background:var(--card); border:1px solid #ffffff; border-radius:20px; padding:18px 20px; box-shadow:0 7px 22px rgba(28,42,74,.035); min-width:0; }
+    .summary-label { font-size:12px; color:var(--muted); margin-bottom:10px; }
+    .summary-value { font-size:clamp(19px,3vw,27px); font-weight:850; letter-spacing:-.7px; overflow-wrap:anywhere; }
+    .summary-note { font-size:12px; color:var(--muted); margin-top:7px; }
+    .positive { color:var(--green)!important; }
+    .negative { color:var(--red)!important; }
+    .position-card { background:var(--card); border:1px solid #fff; border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow); }
+    .position-head { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:25px 28px 20px; border-bottom:1px solid var(--line); }
+    .asset-name { font-size:clamp(17px,2.8vw,22px); font-weight:850; letter-spacing:-.45px; overflow-wrap:anywhere; }
+    .asset-caption { color:var(--muted); font-size:12px; margin-top:7px; }
+    .currency-pill { flex:none; background:#f4f6fa; color:#70798b; padding:8px 11px; border-radius:10px; font-weight:800; font-size:12px; }
+    .detail-row { min-height:55px; display:grid; grid-template-columns:minmax(0,1fr) minmax(110px,auto); gap:18px; align-items:center; padding:13px 28px; border-bottom:1px solid var(--line); }
+    .detail-label { color:#71798a; font-size:14px; }
+    .detail-value { text-align:right; font-weight:750; font-size:15px; overflow-wrap:anywhere; }
+    .detail-value.regular { font-weight:600; }
+    .price-pair { display:grid; grid-template-columns:1fr 1fr; border-bottom:1px solid var(--line); }
+    .price-cell { display:flex; justify-content:space-between; gap:12px; align-items:center; padding:17px 28px; min-width:0; }
+    .price-cell + .price-cell { border-left:1px solid var(--line); }
+    .price-label { color:#71798a; font-size:13px; }
+    .price-value { font-weight:850; font-size:14px; white-space:nowrap; }
+    .close-area { padding:24px 28px 28px; }
+    .close-btn { width:100%; border:0; border-radius:999px; padding:18px 22px; background:#202124; color:#fff; font-family:Georgia,serif; font-size:18px; transition:transform .15s, background .15s; }
+    .close-btn:hover { transform:translateY(-1px); background:#34363a; }
+    .history-list { display:grid; gap:12px; }
+    .history-item { border:1px solid var(--line); border-radius:16px; padding:15px; background:#fff; }
+    .history-top { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; }
+    .history-name { font-weight:800; overflow-wrap:anywhere; }
+    .history-date { color:var(--muted); font-size:11px; margin-top:5px; }
+    .history-metrics { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin:13px 0; }
+    .history-metric-label { color:var(--muted); font-size:11px; margin-bottom:4px; }
+    .history-metric-value { font-size:14px; font-weight:800; overflow-wrap:anywhere; }
+    .history-actions { display:flex; flex-wrap:wrap; gap:8px; }
+    .history-actions button { padding:9px 12px; }
+    .empty-history { text-align:center; padding:28px 15px; color:var(--muted); background:#f8faff; border:1px dashed #dbe2ee; border-radius:15px; font-size:13px; line-height:1.6; }
+    .section-card { margin-top:20px; background:white; border-radius:22px; padding:24px; box-shadow:0 7px 22px rgba(28,42,74,.035); }
+    .section-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:19px; }
+    .section-heading h2 { margin:0; font-size:18px; letter-spacing:-.35px; }
+    .section-heading p { margin:6px 0 0; color:var(--muted); font-size:12px; line-height:1.5; }
+    .edit-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+    .field { min-width:0; }
+    .field.full { grid-column:1/-1; }
+    .field label { display:block; margin-bottom:7px; color:#596276; font-size:12px; font-weight:750; }
+    .field input, .field select {
+      width:100%; min-width:0; border:1px solid #e0e5ee; border-radius:12px; background:#fbfcfe;
+      padding:12px 13px; color:#20283a; outline:none; transition:border-color .15s, box-shadow .15s;
+    }
+    .field input:focus, .field select:focus { border-color:#6a9aff; box-shadow:0 0 0 3px #1764f51a; background:white; }
+    .field-hint { color:#939bad; font-size:11px; margin-top:6px; line-height:1.45; }
+    .edit-actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:19px; }
+    .action-btn { border:1px solid #e0e6f0; background:#fff; color:#475168; border-radius:12px; padding:12px 16px; font-weight:750; font-size:13px; }
+    .action-btn.primary { background:var(--blue); color:white; border-color:var(--blue); }
+    .disclaimer { color:#8991a2; font-size:11px; line-height:1.6; margin:16px 2px 0; }
+    .bottom-nav { position:fixed; bottom:0; left:0; right:0; z-index:10; padding:11px 12px calc(11px + env(safe-area-inset-bottom)); background:#ffffffed; backdrop-filter:blur(18px); border-top:1px solid #e8ebf1; }
+    .nav-inner { max-width:650px; margin:auto; display:flex; align-items:center; justify-content:space-around; gap:6px; }
+    .nav-item { border:0; background:transparent; color:#9aa5c4; min-width:55px; display:flex; flex-direction:column; align-items:center; gap:4px; padding:4px 7px; font-size:10px; font-weight:750; }
+    .nav-item .nav-icon { font-size:22px; line-height:1.1; }
+    .nav-item.active { color:#1970e8; }
+    .nav-item.active .nav-icon { background:var(--blue-soft); border-radius:10px; padding:5px 9px; }
+    .toast { position:fixed; left:50%; bottom:92px; transform:translate(-50%,15px); opacity:0; pointer-events:none; z-index:20; width:max-content; max-width:calc(100% - 32px); background:#1e2635; color:white; border-radius:13px; padding:13px 17px; box-shadow:0 12px 35px #11182735; font-size:13px; line-height:1.5; transition:.22s; }
+    .toast.show { opacity:1; transform:translate(-50%,0); }
+    .modal-backdrop { position:fixed; inset:0; background:#11182780; z-index:30; display:none; place-items:center; padding:20px; }
+    .modal-backdrop.show { display:grid; }
+    .modal { width:min(100%,390px); border-radius:22px; background:white; padding:25px; box-shadow:0 20px 70px #0003; }
+    .modal h3 { margin:0 0 9px; font-size:20px; }
+    .modal p { margin:0; color:#687286; line-height:1.6; font-size:14px; }
+    .modal-actions { display:flex; gap:10px; margin-top:22px; }
+    .modal-actions button { flex:1; }
+    @media (max-width:620px) {
+      .app { padding:17px 12px 105px; }
+      .topbar { margin-bottom:19px; }
+      .brand-mark { width:39px; height:39px; border-radius:13px; }
+      .brand-name { font-size:17px; }
+      .small-btn { padding:9px 10px; font-size:12px; }
+      .tabs { gap:8px; margin-bottom:15px; }
+      .tab { padding:12px 17px; border-radius:15px; font-size:13px; }
+      .summary-grid { gap:8px; }
+      .summary-card { padding:14px 12px; border-radius:16px; }
+      .summary-label { font-size:10px; line-height:1.4; min-height:28px; }
+      .summary-value { font-size:18px; }
+      .summary-note { font-size:10px; line-height:1.4; }
+      .position-head { padding:21px 19px 17px; }
+      .detail-row { padding:13px 19px; min-height:53px; grid-template-columns:minmax(0,1fr) minmax(100px,auto); gap:10px; }
+      .detail-label { font-size:12px; }
+      .detail-value { font-size:13px; }
+      .price-cell { padding:15px 12px; gap:7px; align-items:flex-start; flex-direction:column; }
+      .price-label { font-size:11px; }
+      .price-value { font-size:13px; }
+      .close-area { padding:20px 19px 22px; }
+      .close-btn { padding:17px; font-size:17px; }
+      .section-card { padding:19px 16px; margin-top:15px; border-radius:19px; }
+      .edit-grid { gap:13px 10px; }
+      .field label { font-size:11px; }
+      .field input, .field select { padding:11px 10px; font-size:13px; }
+      .edit-actions .action-btn { flex:1; padding:12px 9px; font-size:12px; }
+      .nav-item { font-size:9px; min-width:45px; }
+    }
+    @media (max-width:380px) {
+      .brand-sub { display:none; }
+      .top-actions { gap:5px; }
+      .small-btn { padding:9px 8px; }
+      .edit-grid { grid-template-columns:1fr; }
+      .field.full { grid-column:auto; }
+      .summary-value { font-size:16px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">P</div>
+        <div>
+          <div class="brand-name">PORTFOLIO <span style="color:#1764f5">PRO</span></div>
+          <div class="brand-sub">Panel de posiciones · Demostración editable</div>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button class="small-btn" id="resetTop" type="button">Restablecer</button>
+        <button class="small-btn primary" id="editTop" type="button">Editar datos</button>
+      </div>
+    </header>
+
+    <nav class="tabs" aria-label="Secciones">
+      <button class="tab active" type="button" data-tab="positions">Posiciones</button>
+      <button class="tab" type="button" data-tab="history">Historial</button>
+      <button class="tab" type="button" data-tab="operations">Operaciones</button>
+    </nav>
+
+    <section id="positionsView">
+    <section class="summary-grid" aria-label="Resumen de la posición">
+      <article class="summary-card">
+        <div class="summary-label">Ganancia / Pérdida</div>
+        <div class="summary-value positive" id="summaryProfit">$9,878.00</div>
+        <div class="summary-note" id="summaryProfitNote">Resultado estimado</div>
+      </article>
+      <article class="summary-card">
+        <div class="summary-label">Rentabilidad</div>
+        <div class="summary-value positive" id="summaryReturn">17.35%</div>
+        <div class="summary-note">Sobre el importe de compra</div>
+      </article>
+      <article class="summary-card">
+        <div class="summary-label">Valor actual</div>
+        <div class="summary-value" id="summaryValue">$66,818.40</div>
+        <div class="summary-note">Precio actual × número de acciones</div>
+      </article>
+    </section>
+
+    <section class="position-card" id="positionCard">
+      <div class="position-head">
+        <div>
+          <div class="asset-name" id="displayName">ModernInc.CommonStock</div>
+          <div class="asset-caption">Detalle de posición · <span id="displaySymbol">MCS</span></div>
+        </div>
+        <div class="currency-pill" id="displayCurrency">USD</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Compra / Venta</div>
+        <div class="detail-value positive" id="displaySide">Comprar</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Ganancia / Pérdida de posición</div>
+        <div class="detail-value positive" id="displayProfit">$9,878.00</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Rentabilidad</div>
+        <div class="detail-value positive" id="displayReturn">17.35%</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Monto de la transacción</div>
+        <div class="detail-value regular" id="displayTransaction">$66,818.40</div>
+      </div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Tarifa de servicio</div>
+        <div class="detail-value regular" id="displayFee">$0.00</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Número de acciones</div>
+        <div class="detail-value regular" id="displayShares">440</div>
+      </div>
+      <div class="price-pair">
+        <div class="price-cell">
+          <span class="price-label">Precio de compra</span>
+          <span class="price-value" id="displayBuyPrice">$129.41</span>
+        </div>
+        <div class="price-cell">
+          <span class="price-label">Precio actual</span>
+          <span class="price-value" id="displayCurrentPrice">$151.86</span>
+        </div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Hora de compra</div>
+        <div class="detail-value regular" id="displayTime">01-09-2026 15:37:06</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Tipo de operación</div>
+        <div class="detail-value regular" id="displayType">Operación en bloque</div>
+      </div>
+      <div class="close-area">
+        <button class="close-btn" id="closePosition" type="button">Cerrar posición</button>
+      </div>
+    </section>
+
+    </section><!-- /positionsView -->
+
+    <section class="section-card" id="historyView" hidden>
+      <div class="section-heading">
+        <div><h2>Historial de operaciones</h2><p>Guarda una instantánea de la posición actual para consultarla más tarde. El historial se conserva en este navegador.</p></div>
+        <button class="action-btn primary" type="button" id="saveHistoryTop">Guardar registro</button>
+      </div>
+      <div id="historyList" class="history-list"></div>
+      <div class="edit-actions"><button class="action-btn" type="button" id="exportHistory">Exportar historial</button><button class="action-btn" type="button" id="clearHistory">Borrar historial</button></div>
+      <p class="disclaimer">El historial se almacena localmente en este navegador. Si borras los datos del navegador o cambias de dispositivo, los registros pueden no estar disponibles. No se conecta a cuentas bursátiles reales.</p>
+    </section>
+
+    <section class="section-card" id="editor">
+      <div class="section-heading">
+        <div>
+          <h2>Editar posición</h2>
+          <p>Cambia los valores y los cálculos se actualizarán automáticamente.</p>
+        </div>
+      </div>
+      <form id="editForm">
+        <div class="edit-grid">
+          <div class="field full">
+            <label for="assetName">Nombre del activo</label>
+            <input id="assetName" value="ModernInc.CommonStock" maxlength="80">
+          </div>
+          <div class="field">
+            <label for="symbol">Símbolo</label>
+            <input id="symbol" value="MCS" maxlength="20">
+          </div>
+          <div class="field">
+            <label for="currency">Moneda</label>
+            <select id="currency">
+              <option value="USD">USD — dólar estadounidense</option>
+              <option value="EUR">EUR — euro</option>
+              <option value="MXN">MXN — peso mexicano</option>
+              <option value="GBP">GBP — libra esterlina</option>
+              <option value="CNY">CNY — yuan chino</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="buyPrice">Precio de compra</label>
+            <input id="buyPrice" type="number" min="0" step="0.01" value="129.41" required>
+          </div>
+          <div class="field">
+            <label for="currentPrice">Precio actual</label>
+            <input id="currentPrice" type="number" min="0" step="0.01" value="151.86" required>
+          </div>
+          <div class="field">
+            <label for="shares">Número de acciones</label>
+            <input id="shares" type="number" min="0" step="any" value="440" required>
+          </div>
+          <div class="field">
+            <label for="fee">Tarifa de servicio</label>
+            <input id="fee" type="number" min="0" step="0.01" value="0" required>
+          </div>
+          <div class="field">
+            <label for="side">Compra / Venta</label>
+            <select id="side">
+              <option value="buy">Comprar</option>
+              <option value="sell">Vender</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="operationType">Tipo de operación</label>
+            <select id="operationType">
+              <option>Operación en bloque</option>
+              <option>Orden de mercado</option>
+              <option>Orden limitada</option>
+              <option>Operación manual</option>
+              <option>Otra operación</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="buyDate">Fecha de compra</label>
+            <input id="buyDate" type="date" value="2026-09-01" required>
+          </div>
+          <div class="field">
+            <label for="buyHour">Hora</label>
+            <input id="buyHour" type="number" min="0" max="23" step="1" value="15" required>
+          </div>
+          <div class="field">
+            <label for="buyMinute">Minutos</label>
+            <input id="buyMinute" type="number" min="0" max="59" step="1" value="37" required>
+          </div>
+          <div class="field">
+            <label for="buySecond">Segundos</label>
+            <input id="buySecond" type="number" min="0" max="59" step="1" value="6" required>
+          </div>
+        </div>
+        <div class="edit-actions">
+          <button class="action-btn primary" type="submit">Aplicar cambios</button>
+          <button class="action-btn" type="button" id="resetData">Restablecer ejemplo</button>
+          <button class="action-btn" type="button" id="copySummary">Copiar resumen</button>
+          <button class="action-btn" type="button" id="saveHistory">Guardar en historial</button>
+        </div>
+        <p class="disclaimer">Demostración visual para cálculos manuales. Los precios no se conectan a una bolsa ni representan cotizaciones en tiempo real. Los registros guardados se conservan en este navegador.</p>
+      </form>
+    </section>
+  </main>
+
+  <nav class="bottom-nav" aria-label="Navegación inferior">
+    <div class="nav-inner">
+      <button class="nav-item" type="button" data-bottom="Inicio"><span class="nav-icon">⌂</span><span>Inicio</span></button>
+      <button class="nav-item" type="button" data-bottom="Mercados"><span class="nav-icon">▥</span><span>Mercados</span></button>
+      <button class="nav-item active" type="button" data-bottom="Transacción"><span class="nav-icon">⇄</span><span>Transacción</span></button>
+      <button class="nav-item" type="button" data-bottom="Mensajes"><span class="nav-icon">▤</span><span>Mensajes</span></button>
+      <button class="nav-item" type="button" data-bottom="Perfil"><span class="nav-icon">♙</span><span>Perfil</span></button>
+    </div>
+  </nav>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal">
+      <h3 id="modalTitle">Cerrar posición</h3>
+      <p id="modalMessage">Esta es una demostración. No se enviará ninguna orden real.</p>
+      <div class="modal-actions">
+        <button class="action-btn" id="cancelModal" type="button">Cancelar</button>
+        <button class="action-btn primary" id="confirmModal" type="button">Entendido</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const initial = {
+      assetName: "ModernInc.CommonStock", symbol: "MCS", currency: "USD",
+      buyPrice: 129.41, currentPrice: 151.86, shares: 440, fee: 0,
+      side: "buy", operationType: "Operación en bloque",
+      buyDate: "2026-09-01", buyHour: 15, buyMinute: 37, buySecond: 6
+    };
+    const fieldIds = Object.keys(initial);
+    const numberIds = ["buyPrice", "currentPrice", "shares", "fee", "buyHour", "buyMinute", "buySecond"];
+    let toastTimer;
+
+    function getData() {
+      const data = {};
+      fieldIds.forEach(id => {
+        const el = $(id);
+        data[id] = numberIds.includes(id) ? Number(el.value || 0) : el.value;
+      });
+      return data;
+    }
+
+    function money(value, currency) {
+      try {
+        return new Intl.NumberFormat("es-ES", {
+          style: "currency", currency, minimumFractionDigits: 2, maximumFractionDigits: 2
+        }).format(Number.isFinite(value) ? value : 0);
+      } catch {
+        return `${currency} ${(Number(value) || 0).toFixed(2)}`;
+      }
+    }
+
+    function number(value, maxDigits = 2) {
+      return new Intl.NumberFormat("es-ES", { maximumFractionDigits: maxDigits }).format(value);
+    }
+
+    function getCalculation(d) {
+      const buyTotal = d.buyPrice * d.shares;
+      const currentTotal = d.currentPrice * d.shares;
+      const direction = d.side === "sell" ? -1 : 1;
+      const profit = (d.currentPrice - d.buyPrice) * d.shares * direction - d.fee;
+      const returnPct = buyTotal > 0 ? profit / buyTotal * 100 : 0;
+      return { buyTotal, currentTotal, profit, returnPct };
+    }
+
+    function setTone(el, value) {
+      el.classList.remove("positive", "negative");
+      el.classList.add(value < 0 ? "negative" : "positive");
+    }
+
+    function formatDateTime(d) {
+      const [year, month, day] = (d.buyDate || "").split("-");
+      if (!year || !month || !day) return "—";
+      const h = String(Math.min(23, Math.max(0, d.buyHour))).padStart(2, "0");
+      const m = String(Math.min(59, Math.max(0, d.buyMinute))).padStart(2, "0");
+      const s = String(Math.min(59, Math.max(0, d.buySecond))).padStart(2, "0");
+      return `${day}-${month}-${year} ${h}:${m}:${s}`;
+    }
+
+    function render() {
+      const d = getData();
+      const c = getCalculation(d);
+      $("displayName").textContent = d.assetName.trim() || "Activo sin nombre";
+      $("displaySymbol").textContent = d.symbol.trim() || "—";
+      $("displayCurrency").textContent = d.currency;
+      $("displaySide").textContent = d.side === "sell" ? "Vender" : "Comprar";
+      $("displaySide").className = "detail-value " + (d.side === "sell" ? "negative" : "positive");
+      $("displayProfit").textContent = money(c.profit, d.currency);
+      $("displayReturn").textContent = `${number(c.returnPct)}%`;
+      setTone($("displayProfit"), c.profit);
+      setTone($("displayReturn"), c.returnPct);
+      $("displayTransaction").textContent = money(c.currentTotal, d.currency);
+      $("displayFee").textContent = money(d.fee, d.currency);
+      $("displayShares").textContent = number(d.shares, 6);
+      $("displayBuyPrice").textContent = money(d.buyPrice, d.currency);
+      $("displayCurrentPrice").textContent = money(d.currentPrice, d.currency);
+      $("displayTime").textContent = formatDateTime(d);
+      $("displayType").textContent = normalizeOperationType(d.operationType);
+      $("summaryProfit").textContent = money(c.profit, d.currency);
+      $("summaryReturn").textContent = `${number(c.returnPct)}%`;
+      $("summaryValue").textContent = money(c.currentTotal, d.currency);
+      $("summaryProfitNote").textContent = c.profit < 0 ? "Pérdida estimada" : "Ganancia estimada";
+      setTone($("summaryProfit"), c.profit);
+      setTone($("summaryReturn"), c.returnPct);
+    }
+
+    function showToast(message) {
+      $("toast").textContent = message;
+      $("toast").classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => $("toast").classList.remove("show"), 2800);
+    }
+
+    function fillForm(data) {
+      fieldIds.forEach(id => {
+        if (data[id] !== undefined && $(id)) $(id).value = data[id];
+      });
+      render();
+    }
