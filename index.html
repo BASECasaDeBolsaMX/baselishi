@@ -471,3 +471,478 @@
       });
       render();
     }
+    function reset() {
+      fillForm(initial);
+      showToast("Se restauraron los datos de ejemplo.");
+    }
+
+    const HISTORY_KEY = "portfolioProHistoryV1";
+
+    function normalizeOperationType(value) {
+      const text = String(value || "").trim();
+
+      // Convierte los tipos de operación antiguos a etiquetas en español.
+      if (!text || /[\u3400-\u9fff]/.test(text) || /&#x?[0-9a-f]+;?/i.test(text)) {
+        return "Operación en bloque";
+      }
+
+      const normalized = text.toLocaleLowerCase("es");
+
+      if (
+        normalized.includes("bloque") ||
+        normalized.includes("block trade")
+      ) {
+        return "Operación en bloque";
+      }
+
+      if (
+        normalized.includes("mercado") ||
+        normalized.includes("market")
+      ) {
+        return "Orden de mercado";
+      }
+
+      if (
+        normalized.includes("limitada") ||
+        normalized.includes("limit order")
+      ) {
+        return "Orden limitada";
+      }
+
+      if (
+        normalized.includes("manual") ||
+        normalized.includes("manualmente")
+      ) {
+        return "Operación manual";
+      }
+
+      return text;
+    }
+
+    function readHistory() {
+      try {
+        const stored = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+        return Array.isArray(stored) ? stored : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveHistory() {
+      const d = getData();
+      const c = getCalculation(d);
+
+      const record = {
+        id: (
+          crypto.randomUUID
+            ? crypto.randomUUID()
+            : String(Date.now()) + Math.random().toString(16).slice(2)
+        ),
+        savedAt: new Date().toISOString(),
+        data: {
+          ...d,
+          operationType: normalizeOperationType(d.operationType)
+        },
+        calc: c,
+        operationTime: formatDateTime(d)
+      };
+
+      const history = readHistory();
+      history.unshift(record);
+
+      try {
+        localStorage.setItem(
+          HISTORY_KEY,
+          JSON.stringify(history.slice(0, 100))
+        );
+        renderHistory();
+        showToast("El registro se guardó en el historial.");
+      } catch {
+        showToast(
+          "No se pudo guardar. Comprueba el espacio disponible del navegador."
+        );
+      }
+    }
+
+    function renderHistory() {
+      const host = $("historyList");
+      const history = readHistory();
+
+      host.replaceChildren();
+
+      if (!history.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty-history";
+        empty.textContent =
+          "Todavía no hay registros guardados. Ve a Posiciones u Operaciones y pulsa «Guardar en historial» para crear el primero.";
+        host.appendChild(empty);
+        return;
+      }
+
+      history.forEach(record => {
+        const d = record.data || {};
+        const operationType = normalizeOperationType(d.operationType);
+        const c = record.calc || getCalculation(d);
+
+        const item = document.createElement("article");
+        item.className = "history-item";
+
+        const top = document.createElement("div");
+        top.className = "history-top";
+
+        const titleWrap = document.createElement("div");
+
+        const name = document.createElement("div");
+        name.className = "history-name";
+        name.textContent =
+          `${d.assetName || "Activo sin nombre"} · ${d.currency || "USD"}`;
+
+        const date = document.createElement("div");
+        date.className = "history-date";
+
+        const saved = record.savedAt ? new Date(record.savedAt) : null;
+        const savedText =
+          saved && !Number.isNaN(saved.getTime())
+            ? saved.toLocaleString("es-ES")
+            : "—";
+
+        date.textContent =
+          `Guardado: ${savedText} · Hora de operación: ${record.operationTime || "—"}`;
+
+        titleWrap.append(name, date);
+
+        const profit = document.createElement("div");
+        profit.className = "history-metric-value";
+        profit.textContent = money(
+          Number(c.profit) || 0,
+          d.currency || "USD"
+        );
+        setTone(profit, Number(c.profit) || 0);
+
+        top.append(titleWrap, profit);
+
+        const metrics = document.createElement("div");
+        metrics.className = "history-metrics";
+
+        const metricData = [
+          ["Rentabilidad", `${number(Number(c.returnPct) || 0)}%`],
+          ["Acciones", number(Number(d.shares) || 0, 6)],
+          [
+            "Compra / actual",
+            `${money(Number(d.buyPrice) || 0, d.currency || "USD")} / ${money(Number(d.currentPrice) || 0, d.currency || "USD")}`
+          ],
+          ["Tipo de operación", operationType]
+        ];
+
+        metricData.forEach(([label, value]) => {
+          const cell = document.createElement("div");
+
+          const labelElement = document.createElement("div");
+          labelElement.className = "history-metric-label";
+          labelElement.textContent = label;
+
+          const valueElement = document.createElement("div");
+          valueElement.className = "history-metric-value";
+          valueElement.textContent = value;
+
+          cell.append(labelElement, valueElement);
+          metrics.appendChild(cell);
+        });
+
+        const actions = document.createElement("div");
+        actions.className = "history-actions";
+
+        const details = document.createElement("button");
+        details.type = "button";
+        details.className = "action-btn";
+        details.textContent = "Ver detalles";
+        details.addEventListener("click", () => showHistoryDetails(record));
+
+        const restore = document.createElement("button");
+        restore.type = "button";
+        restore.className = "action-btn primary";
+        restore.textContent = "Cargar datos";
+        restore.addEventListener("click", () => {
+          fillForm({
+            ...d,
+            operationType
+          });
+          switchTab("operations");
+          showToast("Registro cargado en el formulario.");
+        });
+
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "action-btn";
+        remove.textContent = "Eliminar";
+        remove.addEventListener("click", () => {
+          const updated = readHistory().filter(
+            item => item.id !== record.id
+          );
+          localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
+          renderHistory();
+          showToast("Registro eliminado.");
+        });
+
+        actions.append(details, restore, remove);
+        item.append(top, metrics, actions);
+        host.appendChild(item);
+      });
+    }
+
+    function showHistoryDetails(record) {
+      const d = record.data || {};
+      const c = record.calc || getCalculation(d);
+
+      $("modalTitle").textContent =
+        d.assetName || "Detalles del registro";
+
+      $("modalMessage").textContent = [
+        `Símbolo: ${d.symbol || "—"}`,
+        `Compra / Venta: ${d.side === "sell" ? "Vender" : "Comprar"}`,
+        `Ganancia / pérdida: ${money(Number(c.profit) || 0, d.currency || "USD")}`,
+        `Rentabilidad: ${number(Number(c.returnPct) || 0)}%`,
+        `Número de acciones: ${number(Number(d.shares) || 0, 6)}`,
+        `Precio de compra: ${money(Number(d.buyPrice) || 0, d.currency || "USD")}`,
+        `Precio actual: ${money(Number(d.currentPrice) || 0, d.currency || "USD")}`,
+        `Importe actual: ${money(Number(c.currentTotal) || 0, d.currency || "USD")}`,
+        `Tarifa de servicio: ${money(Number(d.fee) || 0, d.currency || "USD")}`,
+        `Hora de operación: ${record.operationTime || "—"}`,
+        `Tipo de operación: ${normalizeOperationType(d.operationType)}`
+      ].join("\n");
+
+      backdrop.classList.add("show");
+    }
+
+    function switchTab(tab) {
+      document.querySelectorAll("[data-tab]").forEach(button => {
+        button.classList.toggle("active", button.dataset.tab === tab);
+      });
+
+      $("positionsView").hidden = tab === "history";
+      $("historyView").hidden = tab !== "history";
+
+      if (tab === "history") {
+        renderHistory();
+      }
+
+      if (tab === "operations") {
+        $("positionsView").hidden = false;
+        $("editor").scrollIntoView({
+          behavior: "smooth",
+          block: "start"
+        });
+        return;
+      }
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
+    }
+
+    // Actualiza los cálculos cuando cambia cualquier campo.
+    fieldIds.forEach(id => {
+      $(id).addEventListener("input", render);
+      $(id).addEventListener("change", render);
+    });
+
+    $("editForm").addEventListener("submit", event => {
+      event.preventDefault();
+
+      const d = getData();
+
+      if (
+        d.buyPrice < 0 ||
+        d.currentPrice < 0 ||
+        d.shares < 0 ||
+        d.fee < 0
+      ) {
+        showToast(
+          "Los importes, las comisiones y el número de acciones no pueden ser negativos."
+        );
+        return;
+      }
+
+      if (
+        ![d.buyHour, d.buyMinute, d.buySecond].every(Number.isInteger) ||
+        d.buyHour < 0 ||
+        d.buyHour > 23 ||
+        d.buyMinute < 0 ||
+        d.buyMinute > 59 ||
+        d.buySecond < 0 ||
+        d.buySecond > 59
+      ) {
+        showToast(
+          "Revisa la hora: 0–23 y minutos/segundos: 0–59."
+        );
+        return;
+      }
+
+      render();
+      showToast("Los cambios se han aplicado correctamente.");
+    });
+
+    $("resetData").addEventListener("click", reset);
+    $("resetTop").addEventListener("click", reset);
+
+    $("editTop").addEventListener("click", () => {
+      $("editor").scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+      $("assetName").focus({ preventScroll: true });
+    });
+
+    $("copySummary").addEventListener("click", async () => {
+      const d = getData();
+      const c = getCalculation(d);
+
+      const summary = [
+        `Activo: ${d.assetName} (${d.symbol})`,
+        `Operación: ${d.side === "sell" ? "Vender" : "Comprar"}`,
+        `Precio de compra: ${money(d.buyPrice, d.currency)}`,
+        `Precio actual: ${money(d.currentPrice, d.currency)}`,
+        `Acciones: ${number(d.shares, 6)}`,
+        `Importe actual: ${money(c.currentTotal, d.currency)}`,
+        `Tarifa: ${money(d.fee, d.currency)}`,
+        `Ganancia o pérdida estimada: ${money(c.profit, d.currency)}`,
+        `Rentabilidad: ${number(c.returnPct)}%`,
+        `Fecha y hora: ${formatDateTime(d)}`,
+        `Tipo de operación: ${normalizeOperationType(d.operationType)}`
+      ].join("\n");
+
+      try {
+        await navigator.clipboard.writeText(summary);
+        showToast("Resumen copiado.");
+      } catch {
+        const area = document.createElement("textarea");
+        area.value = summary;
+        document.body.appendChild(area);
+        area.select();
+
+        const ok = document.execCommand("copy");
+        area.remove();
+
+        showToast(
+          ok
+            ? "Resumen copiado."
+            : "No se pudo copiar el resumen. Selecciona los datos y cópialos manualmente."
+        );
+      }
+    });
+
+    const backdrop = $("modalBackdrop");
+
+    $("closePosition").addEventListener("click", () => {
+      $("modalTitle").textContent = "Cerrar posición";
+      $("modalMessage").textContent =
+        "Esta página es solo una demostración. No se ejecutará ninguna operación bursátil real.";
+      backdrop.classList.add("show");
+    });
+
+    function hideModal() {
+      backdrop.classList.remove("show");
+    }
+
+    $("cancelModal").addEventListener("click", hideModal);
+
+    $("confirmModal").addEventListener("click", () => {
+      hideModal();
+      showToast("Demostración: no se envió ninguna orden real.");
+    });
+
+    backdrop.addEventListener("click", event => {
+      if (event.target === backdrop) {
+        hideModal();
+      }
+    });
+
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") {
+        hideModal();
+      }
+    });
+
+    document.querySelectorAll("[data-tab]").forEach(button => {
+      button.addEventListener("click", () => {
+        switchTab(button.dataset.tab);
+      });
+    });
+
+    $("saveHistory").addEventListener("click", saveHistory);
+    $("saveHistoryTop").addEventListener("click", saveHistory);
+
+    $("clearHistory").addEventListener("click", () => {
+      if (!readHistory().length) {
+        showToast("El historial ya está vacío.");
+        return;
+      }
+
+      if (confirm("¿Quieres borrar todos los registros del historial?")) {
+        localStorage.removeItem(HISTORY_KEY);
+        renderHistory();
+        showToast("Se borró el historial.");
+      }
+    });
+
+    $("exportHistory").addEventListener("click", () => {
+      const history = readHistory();
+
+      if (!history.length) {
+        showToast("No hay registros para exportar.");
+        return;
+      }
+
+      // Normaliza el tipo de operación antes de exportar.
+      const cleanHistory = history.map(record => ({
+        ...record,
+        data: {
+          ...(record.data || {}),
+          operationType: normalizeOperationType(
+            record.data?.operationType
+          )
+        }
+      }));
+
+      const blob = new Blob(
+        [JSON.stringify(cleanHistory, null, 2)],
+        { type: "application/json" }
+      );
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+
+      a.href = url;
+      a.download = "portfolio-pro-historial.json";
+      a.click();
+
+      URL.revokeObjectURL(url);
+      showToast("Se ha exportado el historial.");
+    });
+
+    document.querySelectorAll("[data-bottom]").forEach(button => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll("[data-bottom]").forEach(item => {
+          item.classList.remove("active");
+        });
+
+        button.classList.add("active");
+
+        if (button.dataset.bottom === "Transacción") {
+          $("positionCard").scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+          });
+        } else {
+          showToast(`${button.dataset.bottom}: sección de demostración.`);
+        }
+      });
+    });
+
+    // Inicialización de la página.
+    render();
+    renderHistory();
+  </script>
+</body>
+</html>
