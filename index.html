@@ -1,901 +1,1312 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#f1f3f8">
-<title>Portfolio Pro | Posiciones</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculadora de Beneficios de Cartera</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --text: #172033;
+      --muted: #718096;
+      --border: #e4eaf2;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --green: #059669;
+      --red: #dc2626;
+      --shadow: 0 8px 28px rgba(31, 45, 61, 0.07);
+      --radius: 18px;
+    }
 
-<style>
-:root {
-  --page:#f1f3f8;
-  --card:#fff;
-  --ink:#171b27;
-  --muted:#858da0;
-  --line:#e9ecf2;
-  --blue:#1764f5;
-  --blue-soft:#eaf1ff;
-  --green:#149b65;
-  --red:#df4c59;
-  --shadow:0 18px 50px rgba(28,42,74,.07);
-  --radius:24px;
-}
-* { box-sizing:border-box; }
-body {
-  margin:0;
-  background:var(--page);
-  color:var(--ink);
-  font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
-  -webkit-font-smoothing:antialiased;
-}
-button,input,select { font:inherit; }
-button { cursor:pointer; }
-[hidden] { display:none!important; }
+    * {
+      box-sizing: border-box;
+    }
 
-.app { width:min(100%,980px); margin:auto; padding:24px 22px 110px; }
-.topbar { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:24px; }
-.brand { display:flex; align-items:center; gap:12px; min-width:0; }
-.brand-mark {
-  width:44px;height:44px;display:grid;place-items:center;flex:none;
-  color:white;border-radius:15px;font-weight:900;
-  background:linear-gradient(145deg,#3279ff,#1354e8);
-  box-shadow:0 8px 20px #1764f52b;
-}
-.brand-name { font-weight:850;letter-spacing:-.5px;font-size:19px; }
-.brand-sub { color:var(--muted);font-size:12px;margin-top:3px; }
-.top-actions { display:flex;gap:9px; }
-.small-btn { border:1px solid #e2e7f0;background:white;color:#39445b;border-radius:12px;padding:10px 13px;font-size:13px;font-weight:700; }
-.small-btn.primary { color:white;border-color:var(--blue);background:var(--blue); }
+    body {
+      margin: 0;
+      padding: 28px 18px 50px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        Helvetica, Arial, sans-serif;
+      line-height: 1.5;
+    }
 
-.tabs { display:flex;gap:10px;overflow-x:auto;padding-bottom:5px;margin-bottom:22px;scrollbar-width:none; }
-.tab { white-space:nowrap;border:1px solid transparent;padding:13px 22px;border-radius:17px;color:#9097a8;background:#ffffffb5;font-weight:700; }
-.tab.active { color:white;background:var(--blue);box-shadow:0 8px 18px #1764f52b; }
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
 
-.summary-grid { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:20px; }
-.summary-card { background:white;border:1px solid white;border-radius:20px;padding:18px 20px;box-shadow:0 7px 22px #1c2a4a09;min-width:0; }
-.summary-label { font-size:12px;color:var(--muted);margin-bottom:10px; }
-.summary-value { font-size:clamp(19px,3vw,27px);font-weight:850;letter-spacing:-.7px;overflow-wrap:anywhere; }
-.summary-note { font-size:12px;color:var(--muted);margin-top:7px; }
-.positive { color:var(--green)!important; }
-.negative { color:var(--red)!important; }
+    header {
+      margin-bottom: 28px;
+    }
 
-.position-card {
-  background:white;border:1px solid white;border-radius:var(--radius);
-  overflow:hidden;box-shadow:var(--shadow);margin-bottom:18px;
-}
-.position-head { display:flex;align-items:center;justify-content:space-between;gap:16px;padding:25px 28px 20px;border-bottom:1px solid var(--line); }
-.asset-name { font-size:clamp(17px,2.8vw,22px);font-weight:850;letter-spacing:-.45px;overflow-wrap:anywhere; }
-.asset-caption { color:var(--muted);font-size:12px;margin-top:7px; }
-.currency-pill { flex:none;background:#f4f6fa;color:#70798b;padding:8px 11px;border-radius:10px;font-weight:800;font-size:12px; }
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(26px, 4vw, 36px);
+      letter-spacing: -0.8px;
+    }
 
-.detail-row {
-  min-height:55px;display:grid;grid-template-columns:minmax(0,1fr) minmax(110px,auto);
-  gap:18px;align-items:center;padding:13px 28px;border-bottom:1px solid var(--line);
-}
-.detail-label { color:#71798a;font-size:14px; }
-.detail-value { text-align:right;font-weight:750;font-size:15px;overflow-wrap:anywhere; }
-.detail-value.regular { font-weight:600; }
-.price-pair { display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--line); }
-.price-cell { display:flex;justify-content:space-between;gap:12px;align-items:center;padding:17px 28px;min-width:0; }
-.price-cell+.price-cell { border-left:1px solid var(--line); }
-.price-label { color:#71798a;font-size:13px; }
-.price-value { font-weight:850;font-size:14px;overflow-wrap:anywhere; }
-.close-area { padding:24px 28px 28px; }
-.close-btn { width:100%;border:0;border-radius:999px;padding:18px 22px;background:#202124;color:white;font-family:Georgia,serif;font-size:18px; }
-.close-btn:hover { background:#34363a; }
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+    }
 
-.section-card {
-  margin-top:42px;background:white;border-radius:22px;padding:28px;
-  box-shadow:0 7px 22px #1c2a4a09;
-}
-.section-heading { display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:22px; }
-.section-heading h2 { margin:0;font-size:19px;letter-spacing:-.35px; }
-.section-heading p { margin:7px 0 0;color:var(--muted);font-size:12px;line-height:1.5; }
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 24px;
+      margin-bottom: 24px;
+    }
 
-.history-list { display:grid;gap:22px; }
-.history-card { background:white;border:1px solid var(--line);border-radius:22px;overflow:hidden;box-shadow:0 7px 22px #1c2a4a08; }
-.history-card .position-head { padding:23px 25px 19px; }
-.history-card .detail-row { padding:13px 25px; }
-.history-card .price-cell { padding:16px 25px; }
-.history-card .history-actions { display:flex;flex-wrap:wrap;gap:9px;padding:20px 25px 24px; }
-.history-card .history-actions button { flex:1;min-width:95px; }
+    .section-title {
+      margin: 0 0 20px;
+      font-size: 21px;
+      letter-spacing: -0.3px;
+    }
 
-.empty-history {
-  text-align:center;padding:35px 18px;color:var(--muted);
-  background:#f8faff;border:1px dashed #dbe2ee;border-radius:16px;
-  font-size:13px;line-height:1.7;
-}
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
 
-.edit-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px; }
-.field { min-width:0; }
-.field.full { grid-column:1/-1; }
-.field label { display:block;margin-bottom:8px;color:#596276;font-size:12px;font-weight:750; }
-.field input,.field select {
-  width:100%;min-width:0;border:1px solid #e0e5ee;border-radius:12px;
-  background:#fbfcfe;padding:12px 13px;color:#20283a;outline:none;
-}
-.field input:focus,.field select:focus { border-color:#6a9aff;box-shadow:0 0 0 3px #1764f51a;background:white; }
-.edit-actions { display:flex;flex-wrap:wrap;gap:10px;margin-top:21px; }
-.action-btn { border:1px solid #e0e6f0;background:white;color:#475168;border-radius:12px;padding:12px 16px;font-weight:750;font-size:13px; }
-.action-btn.primary { background:var(--blue);color:white;border-color:var(--blue); }
+    .field {
+      min-width: 0;
+    }
 
-.bottom-nav {
-  position:fixed;bottom:0;left:0;right:0;z-index:10;
-  padding:11px 12px calc(11px + env(safe-area-inset-bottom));
-  background:#ffffffed;backdrop-filter:blur(18px);border-top:1px solid #e8ebf1;
-}
-.nav-inner { max-width:650px;margin:auto;display:flex;align-items:center;justify-content:space-around;gap:6px; }
-.nav-item { border:0;background:transparent;color:#9aa5c4;min-width:55px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:4px 7px;font-size:10px;font-weight:750; }
-.nav-item .nav-icon { font-size:22px;line-height:1.1; }
-.nav-item.active { color:#1970e8; }
-.nav-item.active .nav-icon { background:var(--blue-soft);border-radius:10px;padding:5px 9px; }
+    .field.full {
+      grid-column: 1 / -1;
+    }
 
-.toast {
-  position:fixed;left:50%;bottom:92px;transform:translate(-50%,15px);opacity:0;
-  pointer-events:none;z-index:40;width:max-content;max-width:calc(100% - 32px);
-  background:#1e2635;color:white;border-radius:13px;padding:13px 17px;
-  box-shadow:0 12px 35px #11182735;font-size:13px;line-height:1.5;transition:.22s;
-}
-.toast.show { opacity:1;transform:translate(-50%,0); }
+    label {
+      display: block;
+      margin-bottom: 7px;
+      font-size: 13px;
+      font-weight: 650;
+      color: #475569;
+    }
 
-.modal-backdrop { position:fixed;inset:0;background:#11182780;z-index:30;display:none;place-items:center;padding:20px; }
-.modal-backdrop.show { display:grid; }
-.modal { width:min(100%,420px);border-radius:22px;background:white;padding:25px;box-shadow:0 20px 70px #0003; }
-.modal h3 { margin:0 0 12px;font-size:20px; }
-.modal p { margin:0;color:#687286;line-height:1.7;font-size:13px;white-space:pre-line;overflow-wrap:anywhere; }
-.modal-actions { display:flex;gap:10px;margin-top:22px; }
-.modal-actions button { flex:1; }
+    input,
+    select,
+    textarea {
+      display: block;
+      width: 100%;
+      min-height: 44px;
+      padding: 11px 12px;
+      border: 1px solid #d6deea;
+      border-radius: 10px;
+      background: #fff;
+      color: var(--text);
+      font: inherit;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
 
-@media(max-width:620px) {
-  .app { padding:17px 12px 105px; }
-  .topbar { margin-bottom:19px; }
-  .brand-mark { width:39px;height:39px;border-radius:13px; }
-  .brand-name { font-size:17px; }
-  .small-btn { padding:9px 10px;font-size:12px; }
-  .tabs { gap:8px;margin-bottom:15px; }
-  .tab { padding:12px 17px;border-radius:15px;font-size:13px; }
-  .summary-grid { gap:8px; }
-  .summary-card { padding:14px 12px;border-radius:16px; }
-  .summary-label { font-size:10px;line-height:1.4;min-height:28px; }
-  .summary-value { font-size:18px; }
-  .summary-note { font-size:10px;line-height:1.4; }
-  .position-head { padding:21px 19px 17px; }
-  .detail-row { padding:13px 19px;min-height:53px;grid-template-columns:minmax(0,1fr) minmax(100px,auto);gap:10px; }
-  .detail-label { font-size:12px; }
-  .detail-value { font-size:13px; }
-  .price-cell { padding:15px 12px;gap:7px;align-items:flex-start;flex-direction:column; }
-  .price-label { font-size:11px; }
-  .price-value { font-size:13px; }
-  .close-area { padding:20px 19px 22px; }
-  .close-btn { padding:17px;font-size:17px; }
-  .section-card { margin-top:34px;padding:22px 16px;border-radius:19px; }
-  .edit-grid { gap:14px 10px; }
-  .field label { font-size:11px; }
-  .field input,.field select { padding:11px 10px;font-size:13px; }
-  .edit-actions .action-btn { flex:1;padding:12px 9px;font-size:12px; }
-  .nav-item { font-size:9px;min-width:45px; }
-  .history-card .position-head { padding:19px 16px 16px; }
-  .history-card .detail-row { padding:12px 16px; }
-  .history-card .price-cell { padding:14px 12px; }
-  .history-card .history-actions { padding:17px 16px 19px;gap:8px; }
-  .history-card .history-actions button { min-width:0;padding:11px 8px;font-size:12px; }
-  .history-list { gap:18px; }
-}
-@media(max-width:380px) {
-  .brand-sub { display:none; }
-  .top-actions { gap:5px; }
-  .small-btn { padding:9px 8px; }
-  .edit-grid { grid-template-columns:1fr; }
-  .field.full { grid-column:auto; }
-  .summary-value { font-size:16px; }
-}
-</style>
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 84px;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    button {
+      min-height: 42px;
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 16px;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 650;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.15s;
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      background: #edf2f8;
+      color: #334155;
+    }
+
+    .btn-secondary:hover {
+      background: #e2e8f0;
+    }
+
+    .btn-danger {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .btn-danger:hover {
+      background: #fecaca;
+    }
+
+    .btn-small {
+      min-height: 34px;
+      padding: 7px 10px;
+      font-size: 12px;
+      border-radius: 8px;
+    }
+
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .result-card {
+      padding: 17px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: #fbfdff;
+      min-width: 0;
+    }
+
+    .result-label {
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .result-value {
+      font-size: clamp(20px, 3vw, 27px);
+      font-weight: 750;
+      overflow-wrap: anywhere;
+      letter-spacing: -0.5px;
+    }
+
+    .positive {
+      color: var(--green);
+    }
+
+    .negative {
+      color: var(--red);
+    }
+
+    .neutral {
+      color: var(--text);
+    }
+
+    .result-detail {
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 580px;
+    }
+
+    th,
+    td {
+      padding: 12px 10px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+
+    th {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 650;
+      background: #f8fafc;
+    }
+
+    td {
+      overflow-wrap: anywhere;
+    }
+
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .history-header .section-title {
+      margin: 0;
+    }
+
+    .history-count {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .history-card {
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .history-card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 17px 18px;
+      background: #fbfdff;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .history-name {
+      margin: 0 0 4px;
+      font-size: 16px;
+      font-weight: 750;
+      overflow-wrap: anywhere;
+    }
+
+    .history-type {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .history-profit {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .history-profit-value {
+      font-size: 20px;
+      font-weight: 750;
+    }
+
+    .history-profit-label {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .history-card-body {
+      padding: 17px 18px;
+    }
+
+    .history-details-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px 20px;
+    }
+
+    .history-detail {
+      min-width: 0;
+    }
+
+    .history-detail-label {
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+
+    .history-detail-value {
+      font-size: 14px;
+      font-weight: 650;
+      overflow-wrap: anywhere;
+    }
+
+    .history-price-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .history-price-box {
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #fbfdff;
+      min-width: 0;
+    }
+
+    .history-price-label {
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+
+    .history-price-value {
+      font-size: 15px;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+
+    .history-note {
+      margin-top: 14px;
+      padding: 12px;
+      border-radius: 10px;
+      background: #f8fafc;
+      color: #475569;
+      font-size: 13px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .history-card-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 13px 18px;
+      border-top: 1px solid var(--border);
+    }
+
+    .empty-state {
+      padding: 34px 18px;
+      text-align: center;
+      border: 1px dashed #cbd5e1;
+      border-radius: 13px;
+      color: var(--muted);
+      background: #fbfdff;
+      font-size: 14px;
+    }
+
+    .editor-section {
+      margin-top: 42px;
+    }
+
+    .editor-section .section-title {
+      margin-bottom: 18px;
+    }
+
+    .status-message {
+      display: none;
+      margin-top: 14px;
+      padding: 11px 13px;
+      border-radius: 10px;
+      font-size: 13px;
+    }
+
+    .status-message.success {
+      display: block;
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .status-message.error {
+      display: block;
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      padding: 20px;
+      overflow-y: auto;
+      background: rgba(15, 23, 42, 0.55);
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-backdrop.visible {
+      display: flex;
+    }
+
+    .modal {
+      width: 100%;
+      max-width: 700px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 22px;
+      border-radius: 16px;
+      background: #fff;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .modal-title {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .modal-close {
+      background: #edf2f8;
+      color: #334155;
+      min-width: 38px;
+      padding: 6px 10px;
+      font-size: 20px;
+    }
+
+    .modal-content {
+      overflow-wrap: anywhere;
+    }
+
+    .modal-content pre {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      background: #f8fafc;
+      padding: 14px;
+      border-radius: 10px;
+      font-size: 12px;
+    }
+
+    @media (max-width: 720px) {
+      body {
+        padding: 20px 12px 36px;
+      }
+
+      .panel {
+        padding: 18px;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+      }
+
+      .field.full {
+        grid-column: auto;
+      }
+
+      .results-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .history-details-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .history-card-top {
+        padding: 14px;
+      }
+
+      .history-card-body {
+        padding: 14px;
+      }
+
+      .history-card-actions {
+        padding: 12px 14px;
+      }
+
+      .history-profit-value {
+        font-size: 17px;
+      }
+
+      .editor-section {
+        margin-top: 34px;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .history-details-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .history-price-row {
+        grid-template-columns: 1fr;
+      }
+
+      .history-card-top {
+        flex-direction: column;
+      }
+
+      .history-profit {
+        text-align: left;
+      }
+
+      .button-row button {
+        flex: 1 1 auto;
+      }
+    }
+  </style>
 </head>
-
 <body>
-<main class="app">
-  <header class="topbar">
-    <div class="brand">
-      <div class="brand-mark">P</div>
-      <div>
-        <div class="brand-name">PORTFOLIO <span style="color:#1764f5">PRO</span></div>
-        <div class="brand-sub">Panel de posiciones · Demostración editable</div>
-      </div>
-    </div>
-    <div class="top-actions">
-      <button class="small-btn" id="resetTop" type="button">Restablecer</button>
-      <button class="small-btn primary" id="editTop" type="button">Editar datos</button>
-    </div>
-  </header>
+  <main class="container">
+    <header>
+      <h1>Calculadora de Beneficios de Cartera</h1>
+      <p class="subtitle">Calcula resultados, revisa posiciones y conserva tu historial de operaciones.</p>
+    </header>
 
-  <nav class="tabs" aria-label="Secciones">
-    <button class="tab active" data-tab="positions" type="button">Posiciones</button>
-    <button class="tab" data-tab="history" type="button">Historial</button>
-    <button class="tab" data-tab="operations" type="button">Operaciones</button>
-  </nav>
+    <section class="panel">
+      <h2 class="section-title">Resumen de la operación</h2>
 
-  <section id="positionsView">
-    <section class="summary-grid">
-      <article class="summary-card">
-        <div class="summary-label">Ganancia / Pérdida</div>
-        <div class="summary-value positive" id="summaryProfit">$9,878.00</div>
-        <div class="summary-note" id="summaryProfitNote">Ganancia estimada</div>
-      </article>
-      <article class="summary-card">
-        <div class="summary-label">Rentabilidad</div>
-        <div class="summary-value positive" id="summaryReturn">17.35%</div>
-        <div class="summary-note">Sobre el importe de compra</div>
-      </article>
-      <article class="summary-card">
-        <div class="summary-label">Valor actual</div>
-        <div class="summary-value" id="summaryValue">$66,818.40</div>
-        <div class="summary-note">Precio actual × número de acciones</div>
-      </article>
-    </section>
-
-    <section class="position-card" id="positionCard">
-      <div class="position-head">
-        <div>
-          <div class="asset-name" id="displayName">ModernInc.CommonStock</div>
-          <div class="asset-caption">Detalle de posición · <span id="displaySymbol">MCS</span></div>
-        </div>
-        <div class="currency-pill" id="displayCurrency">USD</div>
-      </div>
-
-      <div class="detail-row"><div class="detail-label">Compra / Venta</div><div class="detail-value positive" id="displaySide">Comprar</div></div>
-      <div class="detail-row"><div class="detail-label">Ganancia / Pérdida de posición</div><div class="detail-value positive" id="displayProfit">$9,878.00</div></div>
-      <div class="detail-row"><div class="detail-label">Rentabilidad</div><div class="detail-value positive" id="displayReturn">17.35%</div></div>
-      <div class="detail-row"><div class="detail-label">Monto de la transacción</div><div class="detail-value regular" id="displayTransaction">$66,818.40</div></div>
-      <div class="detail-row"><div class="detail-label">Tarifa de servicio</div><div class="detail-value regular" id="displayFee">$0.00</div></div>
-      <div class="detail-row"><div class="detail-label">Número de acciones</div><div class="detail-value regular" id="displayShares">440</div></div>
-
-      <div class="price-pair">
-        <div class="price-cell"><span class="price-label">Precio de compra</span><span class="price-value" id="displayBuyPrice">$129.41</span></div>
-        <div class="price-cell"><span class="price-label">Precio actual</span><span class="price-value" id="displayCurrentPrice">$151.86</span></div>
-      </div>
-
-      <div class="detail-row"><div class="detail-label">Hora de compra</div><div class="detail-value regular" id="displayTime">01-09-2026 15:37:06</div></div>
-      <div class="detail-row"><div class="detail-label">Tipo de operación</div><div class="detail-value regular" id="displayType">Operación en bloque</div></div>
-      <div class="close-area"><button class="close-btn" id="closePosition" type="button">Cerrar posición</button></div>
-    </section>
-  </section>
-
-  <section id="historyView" class="section-card" hidden>
-    <div class="section-heading">
-      <div>
-        <h2>Historial de operaciones</h2>
-        <p>Consulta y administra tus registros guardados.</p>
-      </div>
-      <button class="action-btn primary" id="saveHistoryTop" type="button">Guardar registro</button>
-    </div>
-    <div id="historyList" class="history-list"></div>
-    <div class="edit-actions">
-      <button class="action-btn" id="exportHistory" type="button">Exportar historial</button>
-      <button class="action-btn" id="clearHistory" type="button">Borrar historial</button>
-    </div>
-  </section>
-
-  <section class="section-card" id="editor">
-    <div class="section-heading">
-      <div>
-        <h2>Editar posición</h2>
-        <p>Cambia los valores y los cálculos se actualizarán automáticamente.</p>
-      </div>
-    </div>
-
-    <form id="editForm">
-      <div class="edit-grid">
-        <div class="field full"><label for="assetName">Nombre del activo</label><input id="assetName" value="ModernInc.CommonStock" maxlength="80"></div>
-        <div class="field"><label for="symbol">Símbolo</label><input id="symbol" value="MCS" maxlength="20"></div>
+      <div class="form-grid">
         <div class="field">
-          <label for="currency">Moneda</label>
-          <select id="currency">
-            <option value="USD">USD — dólar estadounidense</option>
-            <option value="EUR">EUR — euro</option>
-            <option value="MXN">MXN — peso mexicano</option>
-            <option value="GBP">GBP — libra esterlina</option>
-            <option value="CNY">CNY — yuan chino</option>
-          </select>
+          <label for="assetName">Nombre del activo</label>
+          <input id="assetName" type="text" placeholder="Ej. BTC, AAPL, ETH">
         </div>
-        <div class="field"><label for="buyPrice">Precio de compra</label><input id="buyPrice" type="number" min="0" step="0.01" value="129.41" required></div>
-        <div class="field"><label for="currentPrice">Precio actual</label><input id="currentPrice" type="number" min="0" step="0.01" value="151.86" required></div>
-        <div class="field"><label for="shares">Número de acciones</label><input id="shares" type="number" min="0" step="any" value="440" required></div>
-        <div class="field"><label for="fee">Tarifa de servicio</label><input id="fee" type="number" min="0" step="0.01" value="0" required></div>
-        <div class="field">
-          <label for="side">Compra / Venta</label>
-          <select id="side"><option value="buy">Comprar</option><option value="sell">Vender</option></select>
-        </div>
+
         <div class="field">
           <label for="operationType">Tipo de operación</label>
           <select id="operationType">
-            <option>Operación en bloque</option>
-            <option>Orden de mercado</option>
-            <option>Orden limitada</option>
-            <option>Operación manual</option>
-            <option>Otra operación</option>
+            <option value="Operación en bloque">Operación en bloque</option>
+            <option value="Compra">Compra</option>
+            <option value="Venta">Venta</option>
+            <option value="Operación de cartera">Operación de cartera</option>
           </select>
         </div>
-        <div class="field"><label for="buyDate">Fecha de compra</label><input id="buyDate" type="date" value="2026-09-01" required></div>
-        <div class="field"><label for="buyHour">Hora</label><input id="buyHour" type="number" min="0" max="23" value="15" required></div>
-        <div class="field"><label for="buyMinute">Minutos</label><input id="buyMinute" type="number" min="0" max="59" value="37" required></div>
-        <div class="field"><label for="buySecond">Segundos</label><input id="buySecond" type="number" min="0" max="59" value="6" required></div>
+
+        <div class="field">
+          <label for="quantity">Cantidad</label>
+          <input id="quantity" type="number" min="0" step="any" placeholder="0">
+        </div>
+
+        <div class="field">
+          <label for="currency">Moneda</label>
+          <select id="currency">
+            <option value="USD">USD ($)</option>
+            <option value="EUR">EUR (€)</option>
+            <option value="GBP">GBP (£)</option>
+            <option value="CNY">CNY (¥)</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="buyPrice">Precio de compra por unidad</label>
+          <input id="buyPrice" type="number" min="0" step="any" placeholder="0.00">
+        </div>
+
+        <div class="field">
+          <label for="sellPrice">Precio de cierre por unidad</label>
+          <input id="sellPrice" type="number" min="0" step="any" placeholder="0.00">
+        </div>
+
+        <div class="field">
+          <label for="fees">Comisiones totales</label>
+          <input id="fees" type="number" min="0" step="any" value="0">
+        </div>
+
+        <div class="field">
+          <label for="closeTime">Hora de cierre</label>
+          <input id="closeTime" type="datetime-local">
+        </div>
+
+        <div class="field full">
+          <label for="notes">Notas</label>
+          <textarea id="notes" placeholder="Añade notas sobre esta operación (opcional)"></textarea>
+        </div>
       </div>
 
-      <div class="edit-actions">
-        <button class="action-btn primary" type="submit">Aplicar cambios</button>
-        <button class="action-btn" id="resetData" type="button">Restablecer ejemplo</button>
-        <button class="action-btn" id="copySummary" type="button">Copiar resumen</button>
-        <button class="action-btn" id="saveHistory" type="button">Guardar en historial</button>
+      <div class="button-row">
+        <button class="btn-primary" id="calculateBtn" type="button">Calcular beneficios</button>
+        <button class="btn-secondary" id="saveBtn" type="button">Guardar en el historial</button>
+        <button class="btn-secondary" id="resetBtn" type="button">Limpiar formulario</button>
       </div>
-    </form>
-  </section>
-</main>
 
-<nav class="bottom-nav" aria-label="Navegación inferior">
-  <div class="nav-inner">
-    <button class="nav-item" data-bottom="Inicio" type="button"><span class="nav-icon">⌂</span><span>Inicio</span></button>
-    <button class="nav-item" data-bottom="Mercados" type="button"><span class="nav-icon">▥</span><span>Mercados</span></button>
-    <button class="nav-item active" data-bottom="Transacción" type="button"><span class="nav-icon">⇄</span><span>Transacción</span></button>
-    <button class="nav-item" data-bottom="Mensajes" type="button"><span class="nav-icon">▤</span><span>Mensajes</span></button>
-    <button class="nav-item" data-bottom="Perfil" type="button"><span class="nav-icon">♙</span><span>Perfil</span></button>
-  </div>
-</nav>
+      <div id="statusMessage" class="status-message" role="status"></div>
+    </section>
 
-<div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <section class="panel">
+      <h2 class="section-title">Resultados</h2>
 
-<div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-  <div class="modal">
-    <h3 id="modalTitle">Detalles</h3>
-    <p id="modalMessage"></p>
-    <div class="modal-actions">
-      <button class="action-btn" id="cancelModal" type="button">Cerrar</button>
-      <button class="action-btn primary" id="confirmModal" type="button">Entendido</button>
+      <div class="results-grid">
+        <div class="result-card">
+          <div class="result-label">Importe de compra</div>
+          <div class="result-value neutral" id="totalCost">—</div>
+          <div class="result-detail">Cantidad × precio de compra</div>
+        </div>
+
+        <div class="result-card">
+          <div class="result-label">Importe de cierre</div>
+          <div class="result-value neutral" id="totalValue">—</div>
+          <div class="result-detail">Cantidad × precio de cierre</div>
+        </div>
+
+        <div class="result-card">
+          <div class="result-label">Beneficio / pérdida neta</div>
+          <div class="result-value neutral" id="netProfit">—</div>
+          <div class="result-detail" id="profitPercent">Rentabilidad: —</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="section-title">Posiciones</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Activo</th>
+              <th>Cantidad</th>
+              <th>Precio de compra</th>
+              <th>Precio de cierre</th>
+              <th>Beneficio neto</th>
+            </tr>
+          </thead>
+          <tbody id="positionsBody">
+            <tr>
+              <td colspan="5" style="text-align:center;color:#718096;">Aún no hay resultados calculados.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="history-header">
+        <h2 class="section-title">Historial</h2>
+        <span class="history-count" id="historyCount">0 registros</span>
+      </div>
+
+      <div id="historyList" class="history-list">
+        <div class="empty-state">Todavía no hay registros en el historial.</div>
+      </div>
+
+      <div class="button-row">
+        <button class="btn-secondary" id="exportBtn" type="button">Exportar historial JSON</button>
+        <button class="btn-danger" id="clearHistoryBtn" type="button">Borrar todo el historial</button>
+      </div>
+    </section>
+
+    <section class="panel editor-section">
+      <h2 class="section-title">Editor de datos</h2>
+      <p class="subtitle">Puedes revisar o editar los datos JSON de una operación antes de volver a cargarla.</p>
+
+      <div class="field" style="margin-top:16px;">
+        <label for="jsonEditor">Datos de la operación (JSON)</label>
+        <textarea id="jsonEditor" rows="10" spellcheck="false" placeholder="Los datos de la operación aparecerán aquí..."></textarea>
+      </div>
+
+      <div class="button-row">
+        <button class="btn-primary" id="loadJsonBtn" type="button">Cargar JSON en el formulario</button>
+        <button class="btn-secondary" id="formatJsonBtn" type="button">Formatear JSON</button>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modalTitle">Detalles del registro</h2>
+        <button class="modal-close" id="modalCloseBtn" type="button" aria-label="Cerrar">×</button>
+      </div>
+      <div class="modal-content" id="modalContent"></div>
     </div>
   </div>
-</div>
-
-<script>
-const $ = id => document.getElementById(id);
-
-const initial = {
-  assetName:"ModernInc.CommonStock",
-  symbol:"MCS",
-  currency:"USD",
-  buyPrice:129.41,
-  currentPrice:151.86,
-  shares:440,
-  fee:0,
-  side:"buy",
-  operationType:"Operación en bloque",
-  buyDate:"2026-09-01",
-  buyHour:15,
-  buyMinute:37,
-  buySecond:6
-};
-
-const fieldIds = Object.keys(initial);
-const numberIds = ["buyPrice","currentPrice","shares","fee","buyHour","buyMinute","buySecond"];
-const HISTORY_KEY = "portfolioProHistoryV1";
-let toastTimer;
-
-function normalizeOperationType(value) {
-  const text = String(value || "").trim();
-
-  if (!text || /[\u3400-\u9fff]/.test(text) || /&#x?[0-9a-f]+;?/i.test(text)) {
-    return "Operación en bloque";
-  }
-
-  const s = text.toLocaleLowerCase("es");
-
-  if (s.includes("bloque") || s.includes("block trade")) return "Operación en bloque";
-  if (s.includes("mercado") || s.includes("market")) return "Orden de mercado";
-  if (s.includes("limitada") || s.includes("limit order")) return "Orden limitada";
-  if (s.includes("manual")) return "Operación manual";
-
-  return text;
-}
-
-function getData() {
-  const data = {};
-
-  fieldIds.forEach(id => {
-    data[id] = numberIds.includes(id) ? Number($(id).value || 0) : $(id).value;
-  });
-
-  data.operationType = normalizeOperationType(data.operationType);
-  return data;
-}
-
-function money(value, currency) {
-  try {
-    return new Intl.NumberFormat("es-ES", {
-      style:"currency",
-      currency,
-      minimumFractionDigits:2,
-      maximumFractionDigits:2
-    }).format(Number(value) || 0);
-  } catch {
-    return `${currency} ${(Number(value) || 0).toFixed(2)}`;
-  }
-}
-
-function number(value, digits=2) {
-  return new Intl.NumberFormat("es-ES", {maximumFractionDigits:digits}).format(Number(value) || 0);
-}
-
-function calculate(d) {
-  const buyTotal = d.buyPrice * d.shares;
-  const currentTotal = d.currentPrice * d.shares;
-  const direction = d.side === "sell" ? -1 : 1;
-  const profit = (d.currentPrice - d.buyPrice) * d.shares * direction - d.fee;
-  const returnPct = buyTotal > 0 ? profit / buyTotal * 100 : 0;
-
-  return {buyTotal,currentTotal,profit,returnPct};
-}
-
-function setTone(element, value) {
-  element.classList.remove("positive","negative");
-  element.classList.add(value < 0 ? "negative" : "positive");
-}
-
-function formatDateTime(d) {
-  const parts = (d.buyDate || "").split("-");
-  if (parts.length !== 3) return "—";
-
-  const [year,month,day] = parts;
-  const h = String(Math.min(23,Math.max(0,Number(d.buyHour)||0))).padStart(2,"0");
-  const m = String(Math.min(59,Math.max(0,Number(d.buyMinute)||0))).padStart(2,"0");
-  const s = String(Math.min(59,Math.max(0,Number(d.buySecond)||0))).padStart(2,"0");
-
-  return `${day}-${month}-${year} ${h}:${m}:${s}`;
-}
-
-function render() {
-  const d = getData();
-  const c = calculate(d);
-
-  $("displayName").textContent = d.assetName.trim() || "Activo sin nombre";
-  $("displaySymbol").textContent = d.symbol.trim() || "—";
-  $("displayCurrency").textContent = d.currency;
-
-  $("displaySide").textContent = d.side === "sell" ? "Vender" : "Comprar";
-  $("displaySide").className = "detail-value " + (d.side === "sell" ? "negative" : "positive");
-
-  $("displayProfit").textContent = money(c.profit,d.currency);
-  $("displayReturn").textContent = `${number(c.returnPct)}%`;
-  $("displayTransaction").textContent = money(c.currentTotal,d.currency);
-  $("displayFee").textContent = money(d.fee,d.currency);
-  $("displayShares").textContent = number(d.shares,6);
-  $("displayBuyPrice").textContent = money(d.buyPrice,d.currency);
-  $("displayCurrentPrice").textContent = money(d.currentPrice,d.currency);
-  $("displayTime").textContent = formatDateTime(d);
-  $("displayType").textContent = d.operationType;
-
-  $("summaryProfit").textContent = money(c.profit,d.currency);
-  $("summaryReturn").textContent = `${number(c.returnPct)}%`;
-  $("summaryValue").textContent = money(c.currentTotal,d.currency);
-  $("summaryProfitNote").textContent = c.profit < 0 ? "Pérdida estimada" : "Ganancia estimada";
-
-  setTone($("displayProfit"),c.profit);
-  setTone($("displayReturn"),c.returnPct);
-  setTone($("summaryProfit"),c.profit);
-  setTone($("summaryReturn"),c.returnPct);
-}
-
-function showToast(message) {
-  $("toast").textContent = message;
-  $("toast").classList.add("show");
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => $("toast").classList.remove("show"),2800);
-}
-
-function fillForm(data) {
-  fieldIds.forEach(id => {
-    if (data[id] !== undefined && $(id)) $(id).value = data[id];
-  });
-
-  $("operationType").value = normalizeOperationType(data.operationType);
-
-  const allowed = [...$("operationType").options].some(o => o.value === $("operationType").value);
-  if (!allowed) $("operationType").value = "Operación en bloque";
-
-  render();
-}
-
-function reset() {
-  fillForm(initial);
-  showToast("Se restauraron los datos de ejemplo.");
-}
-
-function readHistory() {
-  try {
-    const value = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
-    return Array.isArray(value) ? value : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveHistory() {
-  const d = getData();
-  const c = calculate(d);
-
-  const record = {
-    id:crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
-    data:d,
-    calc:c,
-    operationTime:formatDateTime(d)
-  };
-
-  try {
-    const history = readHistory();
-    history.unshift(record);
-    localStorage.setItem(HISTORY_KEY,JSON.stringify(history.slice(0,100)));
-    renderHistory();
-    showToast("El registro se guardó correctamente.");
-  } catch {
-    showToast("No se pudo guardar el registro.");
-  }
-}
-
-function addDetailRow(parent,label,value,options={}) {
-  const row = document.createElement("div");
-  row.className = "detail-row";
-
-  const labelEl = document.createElement("div");
-  labelEl.className = "detail-label";
-  labelEl.textContent = label;
-
-  const valueEl = document.createElement("div");
-  valueEl.className = "detail-value" + (options.regular ? " regular" : "");
-  valueEl.textContent = value;
-
-  if (options.tone !== undefined) setTone(valueEl,options.tone);
-
-  row.append(labelEl,valueEl);
-  parent.appendChild(row);
-}
-
-function createHistoryCard(record) {
-  const d = record.data || {};
-  d.operationType = normalizeOperationType(d.operationType);
-
-  const c = record.calc || calculate(d);
-  const currency = d.currency || "USD";
-
-  const card = document.createElement("article");
-  card.className = "history-card";
-
-  const head = document.createElement("div");
-  head.className = "position-head";
-
-  const titleWrap = document.createElement("div");
-
-  const title = document.createElement("div");
-  title.className = "asset-name";
-  title.textContent = d.assetName || "Activo sin nombre";
-
-  const caption = document.createElement("div");
-  caption.className = "asset-caption";
-  caption.textContent = `Detalle de posición · ${d.symbol || "—"}`;
-
-  titleWrap.append(title,caption);
-
-  const currencyTag = document.createElement("div");
-  currencyTag.className = "currency-pill";
-  currencyTag.textContent = currency;
-
-  head.append(titleWrap,currencyTag);
-  card.appendChild(head);
-
-  addDetailRow(card,"Compra / Venta",d.side === "sell" ? "Vender" : "Comprar",{
-    tone:d.side === "sell" ? -1 : 1
-  });
-
-  addDetailRow(card,"Ganancia / Pérdida de posición",money(Number(c.profit)||0,currency),{
-    tone:Number(c.profit)||0
-  });
-
-  addDetailRow(card,"Rentabilidad",`${number(Number(c.returnPct)||0)}%`,{
-    tone:Number(c.returnPct)||0
-  });
-
-  addDetailRow(card,"Monto de la transacción",money(Number(c.currentTotal)||0,currency),{regular:true});
-  addDetailRow(card,"Tarifa de servicio",money(Number(d.fee)||0,currency),{regular:true});
-  addDetailRow(card,"Número de acciones",number(Number(d.shares)||0,6),{regular:true});
-
-  const prices = document.createElement("div");
-  prices.className = "price-pair";
-
-  const buyCell = document.createElement("div");
-  buyCell.className = "price-cell";
-
-  const buyLabel = document.createElement("span");
-  buyLabel.className = "price-label";
-  buyLabel.textContent = "Precio de compra";
-
-  const buyValue = document.createElement("span");
-  buyValue.className = "price-value";
-  buyValue.textContent = money(Number(d.buyPrice)||0,currency);
-
-  buyCell.append(buyLabel,buyValue);
-
-  const currentCell = document.createElement("div");
-  currentCell.className = "price-cell";
-
-  const currentLabel = document.createElement("span");
-  currentLabel.className = "price-label";
-  currentLabel.textContent = "Precio actual";
-
-  const currentValue = document.createElement("span");
-  currentValue.className = "price-value";
-  currentValue.textContent = money(Number(d.currentPrice)||0,currency);
-
-  currentCell.append(currentLabel,currentValue);
-  prices.append(buyCell,currentCell);
-  card.appendChild(prices);
-
-  addDetailRow(card,"Hora de compra",record.operationTime || formatDateTime(d),{regular:true});
-  addDetailRow(card,"Tipo de operación",d.operationType,{regular:true});
-
-  const actions = document.createElement("div");
-  actions.className = "history-actions";
-
-  const detailsBtn = document.createElement("button");
-  detailsBtn.type = "button";
-  detailsBtn.className = "action-btn";
-  detailsBtn.textContent = "Ver detalles";
-  detailsBtn.addEventListener("click",() => showHistoryDetails(record));
-
-  const loadBtn = document.createElement("button");
-  loadBtn.type = "button";
-  loadBtn.className = "action-btn primary";
-  loadBtn.textContent = "Cargar datos";
-  loadBtn.addEventListener("click",() => {
-    fillForm(d);
-    switchTab("operations");
-    showToast("Registro cargado en el formulario.");
-  });
-
-  const deleteBtn = document.createElement("button");
-  deleteBtn.type = "button";
-  deleteBtn.className = "action-btn";
-  deleteBtn.textContent = "Eliminar";
-  deleteBtn.addEventListener("click",() => {
-    const updated = readHistory().filter(item => item.id !== record.id);
-    localStorage.setItem(HISTORY_KEY,JSON.stringify(updated));
-    renderHistory();
-    showToast("Registro eliminado.");
-  });
-
-  actions.append(detailsBtn,loadBtn,deleteBtn);
-  card.appendChild(actions);
-
-  return card;
-}
-
-function renderHistory() {
-  const host = $("historyList");
-  host.replaceChildren();
-
-  const history = readHistory();
-
-  if (!history.length) {
-    const empty = document.createElement("div");
-    empty.className = "empty-history";
-    empty.textContent = "Todavía no hay registros. Guarda una posición para verla aquí.";
-    host.appendChild(empty);
-    return;
-  }
-
-  history.forEach(record => host.appendChild(createHistoryCard(record)));
-}
-
-function showHistoryDetails(record) {
-  const d = record.data || {};
-  const c = record.calc || calculate(d);
-  const currency = d.currency || "USD";
-
-  $("modalTitle").textContent = d.assetName || "Detalles de la operación";
-  $("modalMessage").textContent = [
-    `Símbolo: ${d.symbol || "—"}`,
-    `Compra / Venta: ${d.side === "sell" ? "Vender" : "Comprar"}`,
-    `Ganancia / pérdida: ${money(Number(c.profit)||0,currency)}`,
-    `Rentabilidad: ${number(Number(c.returnPct)||0)}%`,
-    `Monto de la transacción: ${money(Number(c.currentTotal)||0,currency)}`,
-    `Tarifa de servicio: ${money(Number(d.fee)||0,currency)}`,
-    `Número de acciones: ${number(Number(d.shares)||0,6)}`,
-    `Precio de compra: ${money(Number(d.buyPrice)||0,currency)}`,
-    `Precio actual: ${money(Number(d.currentPrice)||0,currency)}`,
-    `Hora de compra: ${record.operationTime || formatDateTime(d)}`,
-    `Tipo de operación: ${normalizeOperationType(d.operationType)}`
-  ].join("\n");
-
-  $("modalBackdrop").classList.add("show");
-}
-
-function switchTab(tab) {
-  document.querySelectorAll("[data-tab]").forEach(button => {
-    button.classList.toggle("active",button.dataset.tab === tab);
-  });
-
-  $("positionsView").hidden = tab === "history";
-  $("historyView").hidden = tab !== "history";
-
-  if (tab === "history") {
-    renderHistory();
-    window.scrollTo({top:0,behavior:"smooth"});
-    return;
-  }
-
-  if (tab === "operations") {
-    $("editor").scrollIntoView({behavior:"smooth",block:"start"});
-    return;
-  }
-
-  window.scrollTo({top:0,behavior:"smooth"});
-}
-
-fieldIds.forEach(id => {
-  $(id).addEventListener("input",render);
-  $(id).addEventListener("change",render);
-});
-
-$("editForm").addEventListener("submit",event => {
-  event.preventDefault();
-
-  const d = getData();
-
-  if (d.buyPrice < 0 || d.currentPrice < 0 || d.shares < 0 || d.fee < 0) {
-    showToast("Los valores numéricos no pueden ser negativos.");
-    return;
-  }
-
-  if (
-    ![d.buyHour,d.buyMinute,d.buySecond].every(Number.isInteger) ||
-    d.buyHour < 0 || d.buyHour > 23 ||
-    d.buyMinute < 0 || d.buyMinute > 59 ||
-    d.buySecond < 0 || d.buySecond > 59
-  ) {
-    showToast("Revisa la hora y los minutos.");
-    return;
-  }
-
-  render();
-  showToast("Los cambios se han aplicado correctamente.");
-});
-
-$("resetData").addEventListener("click",reset);
-$("resetTop").addEventListener("click",reset);
-
-$("editTop").addEventListener("click",() => {
-  $("editor").scrollIntoView({behavior:"smooth",block:"start"});
-  $("assetName").focus({preventScroll:true});
-});
-
-$("saveHistory").addEventListener("click",saveHistory);
-$("saveHistoryTop").addEventListener("click",saveHistory);
-
-$("copySummary").addEventListener("click",async() => {
-  const d = getData();
-  const c = calculate(d);
-
-  const summary = [
-    `Activo: ${d.assetName} (${d.symbol})`,
-    `Operación: ${d.side === "sell" ? "Vender" : "Comprar"}`,
-    `Precio de compra: ${money(d.buyPrice,d.currency)}`,
-    `Precio actual: ${money(d.currentPrice,d.currency)}`,
-    `Acciones: ${number(d.shares,6)}`,
-    `Importe actual: ${money(c.currentTotal,d.currency)}`,
-    `Tarifa: ${money(d.fee,d.currency)}`,
-    `Ganancia o pérdida: ${money(c.profit,d.currency)}`,
-    `Rentabilidad: ${number(c.returnPct)}%`,
-    `Fecha y hora: ${formatDateTime(d)}`,
-    `Tipo de operación: ${d.operationType}`
-  ].join("\n");
-
-  try {
-    await navigator.clipboard.writeText(summary);
-    showToast("Resumen copiado.");
-  } catch {
-    const area = document.createElement("textarea");
-    area.value = summary;
-    document.body.appendChild(area);
-    area.select();
-    const success = document.execCommand("copy");
-    area.remove();
-    showToast(success ? "Resumen copiado." : "No se pudo copiar el resumen.");
-  }
-});
-
-$("closePosition").addEventListener("click",() => {
-  $("modalTitle").textContent = "Cerrar posición";
-  $("modalMessage").textContent = "Esta página es una demostración. No se enviará ninguna orden bursátil real.";
-  $("modalBackdrop").classList.add("show");
-});
-
-function closeModal() {
-  $("modalBackdrop").classList.remove("show");
-}
-
-$("cancelModal").addEventListener("click",closeModal);
-$("confirmModal").addEventListener("click",() => {
-  closeModal();
-  showToast("Demostración: no se envió ninguna orden real.");
-});
-
-$("modalBackdrop").addEventListener("click",event => {
-  if (event.target === $("modalBackdrop")) closeModal();
-});
-
-document.addEventListener("keydown",event => {
-  if (event.key === "Escape") closeModal();
-});
-
-document.querySelectorAll("[data-tab]").forEach(button => {
-  button.addEventListener("click",() => switchTab(button.dataset.tab));
-});
-
-$("clearHistory").addEventListener("click",() => {
-  if (!readHistory().length) {
-    showToast("El historial ya está vacío.");
-    return;
-  }
-
-  if (confirm("¿Quieres borrar todos los registros del historial?")) {
-    localStorage.removeItem(HISTORY_KEY);
-    renderHistory();
-    showToast("Se borró el historial.");
-  }
-});
-
-$("exportHistory").addEventListener("click",() => {
-  const history = readHistory();
-
-  if (!history.length) {
-    showToast("No hay registros para exportar.");
-    return;
-  }
-
-  const cleanHistory = history.map(record => ({
-    ...record,
-    data:{
-      ...(record.data || {}),
-      operationType:normalizeOperationType(record.data?.operationType)
-    }
-  }));
-
-  const blob = new Blob(
-    [JSON.stringify(cleanHistory,null,2)],
-    {type:"application/json"}
-  );
-
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-
-  link.href = url;
-  link.download = "portfolio-pro-historial.json";
-  link.click();
-
-  setTimeout(() => URL.revokeObjectURL(url),1000);
-  showToast("Se ha exportado el historial.");
-});
-
-document.querySelectorAll("[data-bottom]").forEach(button => {
-  button.addEventListener("click",() => {
-    document.querySelectorAll("[data-bottom]").forEach(item => item.classList.remove("active"));
-    button.classList.add("active");
-
-    if (button.dataset.bottom === "Transacción") {
-      $("positionCard").scrollIntoView({behavior:"smooth",block:"start"});
-    } else {
-      showToast(`${button.dataset.bottom}: sección de demostración.`);
-    }
-  });
-});
-
-render();
-renderHistory();
-</script>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const STORAGE_KEY = "portfolioProHistoryV1";
+
+      const $ = (id) => document.getElementById(id);
+
+      const fields = {
+        assetName: $("assetName"),
+        operationType: $("operationType"),
+        quantity: $("quantity"),
+        currency: $("currency"),
+        buyPrice: $("buyPrice"),
+        sellPrice: $("sellPrice"),
+        fees: $("fees"),
+        closeTime: $("closeTime"),
+        notes: $("notes")
+      };
+
+      let lastCalculation = null;
+      let positions = [];
+
+      function escapeHtml(value) {
+        return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;"
+        })[char]);
+      }
+
+      function numeric(value, fallback = 0) {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : fallback;
+      }
+
+      function money(value, currency = "USD") {
+        const amount = numeric(value);
+        try {
+          return new Intl.NumberFormat("es-ES", {
+            style: "currency",
+            currency,
+            maximumFractionDigits: 2,
+            minimumFractionDigits: 2
+          }).format(amount);
+        } catch {
+          return amount.toFixed(2) + " " + currency;
+        }
+      }
+
+      function formatNumber(value) {
+        return new Intl.NumberFormat("es-ES", {
+          maximumFractionDigits: 8
+        }).format(numeric(value));
+      }
+
+      function formatPercent(value) {
+        return new Intl.NumberFormat("es-ES", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }).format(numeric(value)) + "%";
+      }
+
+      function formatDate(value) {
+        if (!value) return "—";
+
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return String(value);
+
+        return new Intl.DateTimeFormat("es-ES", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit"
+        }).format(date);
+      }
+
+      function normalizeOperationType(value) {
+        const text = String(value ?? "").trim();
+
+        if (!text || /operaci[oó]n en bloque|&#243;|&oacute;/i.test(text)) {
+          return "Operación en bloque";
+        }
+
+        if (/compra/i.test(text)) return "Compra";
+        if (/venta/i.test(text)) return "Venta";
+        if (/cartera/i.test(text)) return "Operación de cartera";
+
+        return text;
+      }
+
+      function showStatus(message, type = "success") {
+        const element = $("statusMessage");
+        element.textContent = message;
+        element.className = "status-message " + type;
+
+        window.clearTimeout(showStatus.timeout);
+        showStatus.timeout = window.setTimeout(() => {
+          element.className = "status-message";
+          element.textContent = "";
+        }, 3500);
+      }
+
+      function getFormData() {
+        return {
+          assetName: fields.assetName.value.trim(),
+          operationType: normalizeOperationType(fields.operationType.value),
+          quantity: numeric(fields.quantity.value),
+          currency: fields.currency.value || "USD",
+          buyPrice: numeric(fields.buyPrice.value),
+          sellPrice: numeric(fields.sellPrice.value),
+          fees: numeric(fields.fees.value),
+          closeTime: fields.closeTime.value || "",
+          notes: fields.notes.value.trim()
+        };
+      }
+
+      function calculate(data = getFormData()) {
+        const quantity = numeric(data.quantity);
+        const buyPrice = numeric(data.buyPrice);
+        const sellPrice = numeric(data.sellPrice);
+        const fees = numeric(data.fees);
+        const totalCost = quantity * buyPrice;
+        const totalValue = quantity * sellPrice;
+        const grossProfit = totalValue - totalCost;
+        const netProfit = grossProfit - fees;
+        const profitPercent = totalCost !== 0
+          ? (netProfit / totalCost) * 100
+          : 0;
+
+        return {
+          ...data,
+          operationType: normalizeOperationType(data.operationType),
+          totalCost,
+          totalValue,
+          grossProfit,
+          netProfit,
+          profitPercent
+        };
+      }
+
+      function renderResults(result) {
+        $("totalCost").textContent = money(result.totalCost, result.currency);
+        $("totalValue").textContent = money(result.totalValue, result.currency);
+        $("netProfit").textContent = money(result.netProfit, result.currency);
+        $("profitPercent").textContent = "Rentabilidad: " + formatPercent(result.profitPercent);
+
+        const profitElement = $("netProfit");
+        profitElement.className = "result-value " +
+          (result.netProfit > 0 ? "positive" : result.netProfit < 0 ? "negative" : "neutral");
+
+        lastCalculation = result;
+        upsertPosition(result);
+        renderPositions();
+        updateJsonEditor(result);
+      }
+
+      function upsertPosition(result) {
+        const key = (result.assetName || "Sin nombre").toLowerCase();
+        const index = positions.findIndex((item) =>
+          (item.assetName || "Sin nombre").toLowerCase() === key
+        );
+
+        const position = { ...result };
+
+        if (index >= 0) positions[index] = position;
+        else positions.unshift(position);
+      }
+
+      function renderPositions() {
+        const body = $("positionsBody");
+
+        if (!positions.length) {
+          body.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#718096;">Aún no hay resultados calculados.</td></tr>';
+          return;
+        }
+
+        body.innerHTML = positions.map((item) => {
+          const cls = item.netProfit > 0 ? "positive" : item.netProfit < 0 ? "negative" : "neutral";
+
+          return `
+            <tr>
+              <td>${escapeHtml(item.assetName || "Sin nombre")}</td>
+              <td>${escapeHtml(formatNumber(item.quantity))}</td>
+              <td>${escapeHtml(money(item.buyPrice, item.currency))}</td>
+              <td>${escapeHtml(money(item.sellPrice, item.currency))}</td>
+              <td class="${cls}">${escapeHtml(money(item.netProfit, item.currency))}</td>
+            </tr>
+          `;
+        }).join("");
+      }
+
+      function readHistory() {
+        try {
+          const value = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+          return Array.isArray(value) ? value : [];
+        } catch {
+          return [];
+        }
+      }
+
+      function writeHistory(records) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+      }
+
+      function normalizeRecord(record) {
+        const data = { ...record };
+
+        // Compatibilidad con registros guardados por versiones anteriores.
+        if (!data.closeTime && data.buyTime) {
+          data.closeTime = data.buyTime;
+        }
+
+        data.operationType = normalizeOperationType(data.operationType);
+
+        const result = calculate(data);
+
+        return {
+          ...result,
+          id: data.id || (
+            Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
+          ),
+          savedAt: data.savedAt || "",
+          closeTime: data.closeTime || "",
+          notes: data.notes || ""
+        };
+      }
+
+      function historyDetail(label, value) {
+        return `
+          <div class="history-detail">
+            <div class="history-detail-label">${escapeHtml(label)}</div>
+            <div class="history-detail-value">${escapeHtml(value)}</div>
+          </div>
+        `;
+      }
+
+      function renderHistory() {
+        const history = readHistory();
+        const list = $("historyList");
+
+        $("historyCount").textContent =
+          history.length + (history.length === 1 ? " registro" : " registros");
+
+        if (!history.length) {
+          list.innerHTML = '<div class="empty-state">Todavía no hay registros en el historial.</div>';
+          return;
+        }
+
+        list.innerHTML = history.map((rawRecord) => {
+          const record = normalizeRecord(rawRecord);
+          const profitClass = record.netProfit > 0
+            ? "positive"
+            : record.netProfit < 0 ? "negative" : "neutral";
+
+          return `
+            <article class="history-card" data-id="${escapeHtml(record.id)}">
+              <div class="history-card-top">
+                <div>
+                  <h3 class="history-name">${escapeHtml(record.assetName || "Sin nombre")}</h3>
+                  <div class="history-type">${escapeHtml(record.operationType || "Operación en bloque")}</div>
+                </div>
+                <div class="history-profit">
+                  <div class="history-profit-value ${profitClass}">
+                    ${escapeHtml(money(record.netProfit, record.currency))}
+                  </div>
+                  <div class="history-profit-label">
+                    Beneficio neto · ${escapeHtml(formatPercent(record.profitPercent))}
+                  </div>
+                </div>
+              </div>
+
+              <div class="history-card-body">
+                <div class="history-details-grid">
+                  ${historyDetail("Cantidad", formatNumber(record.quantity))}
+                  ${historyDetail("Importe de compra", money(record.totalCost, record.currency))}
+                  ${historyDetail("Importe de cierre", money(record.totalValue, record.currency))}
+                  ${historyDetail("Comisiones", money(record.fees, record.currency))}
+                  ${historyDetail("Hora de cierre", formatDate(record.closeTime))}
+                  ${historyDetail("Rentabilidad", formatPercent(record.profitPercent))}
+                </div>
+
+                <div class="history-price-row">
+                  <div class="history-price-box">
+                    <div class="history-price-label">Precio de compra</div>
+                    <div class="history-price-value">${escapeHtml(money(record.buyPrice, record.currency))}</div>
+                  </div>
+                  <div class="history-price-box">
+                    <div class="history-price-label">Precio de cierre</div>
+                    <div class="history-price-value">${escapeHtml(money(record.sellPrice, record.currency))}</div>
+                  </div>
+                </div>
+
+                ${record.notes ? `<div class="history-note">${escapeHtml(record.notes)}</div>` : ""}
+              </div>
+
+              <div class="history-card-actions">
+                <button class="btn-secondary btn-small" type="button" data-action="details" data-id="${escapeHtml(record.id)}">Ver detalles</button>
+                <button class="btn-primary btn-small" type="button" data-action="load" data-id="${escapeHtml(record.id)}">Cargar datos</button>
+                <button class="btn-danger btn-small" type="button" data-action="delete" data-id="${escapeHtml(record.id)}">Eliminar</button>
+              </div>
+            </article>
+          `;
+        }).join("");
+      }
+
+      function updateJsonEditor(data) {
+        $("jsonEditor").value = JSON.stringify(data, null, 2);
+      }
+
+      function loadRecordIntoForm(record) {
+        fields.assetName.value = record.assetName || "";
+        fields.operationType.value = normalizeOperationType(record.operationType);
+
+        if (![...fields.operationType.options].some((option) => option.value === fields.operationType.value)) {
+          const option = document.createElement("option");
+          option.value = fields.operationType.value;
+          option.textContent = fields.operationType.value;
+          fields.operationType.appendChild(option);
+        }
+
+        fields.quantity.value = record.quantity ?? "";
+        fields.currency.value = record.currency || "USD";
+        fields.buyPrice.value = record.buyPrice ?? "";
+        fields.sellPrice.value = record.sellPrice ?? "";
+        fields.fees.value = record.fees ?? 0;
+        fields.closeTime.value = record.closeTime || "";
+        fields.notes.value = record.notes || "";
+
+        const result = calculate(getFormData());
+        renderResults(result);
+        showStatus("Los datos se han cargado en el formulario.");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      function saveToHistory() {
+        const data = getFormData();
+
+        if (!data.assetName) {
+          showStatus("Introduce el nombre del activo antes de guardar.", "error");
+          fields.assetName.focus();
+          return;
+        }
+
+        if (fields.quantity.value === "" ||
+            fields.buyPrice.value === "" ||
+            fields.sellPrice.value === "") {
+          showStatus("Completa la cantidad y los precios de compra y cierre.", "error");
+          return;
+        }
+
+        const result = calculate(data);
+        const history = readHistory();
+
+        const record = {
+          ...result,
+          id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
+          savedAt: new Date().toISOString()
+        };
+
+        history.unshift(record);
+
+        try {
+          writeHistory(history);
+          renderHistory();
+          updateJsonEditor(record);
+          showStatus("La operación se ha guardado en el historial.");
+        } catch {
+          showStatus("No se pudo guardar el registro en este navegador.", "error");
+        }
+      }
+
+      function deleteRecord(id) {
+        const history = readHistory();
+        const updated = history.filter((record) => String(record.id) !== String(id));
+
+        try {
+          writeHistory(updated);
+          renderHistory();
+          showStatus("Registro eliminado.");
+        } catch {
+          showStatus("No se pudo eliminar el registro.", "error");
+        }
+      }
+
+      function showDetails(id) {
+        const record = readHistory().find((item) => String(item.id) === String(id));
+        if (!record) return;
+
+        const normalized = normalizeRecord(record);
+        $("modalTitle").textContent = normalized.assetName || "Detalles del registro";
+
+        const displayData = {
+          "Activo": normalized.assetName,
+          "Tipo de operación": normalized.operationType,
+          "Cantidad": formatNumber(normalized.quantity),
+          "Moneda": normalized.currency,
+          "Precio de compra": money(normalized.buyPrice, normalized.currency),
+          "Precio de cierre": money(normalized.sellPrice, normalized.currency),
+          "Importe de compra": money(normalized.totalCost, normalized.currency),
+          "Importe de cierre": money(normalized.totalValue, normalized.currency),
+          "Comisiones": money(normalized.fees, normalized.currency),
+          "Beneficio bruto": money(normalized.grossProfit, normalized.currency),
+          "Beneficio neto": money(normalized.netProfit, normalized.currency),
+          "Rentabilidad": formatPercent(normalized.profitPercent),
+          "Hora de cierre": formatDate(normalized.closeTime),
+          "Notas": normalized.notes || "—"
+        };
+
+        $("modalContent").innerHTML = `
+          <div class="history-details-grid">
+            ${Object.entries(displayData).map(([label, value]) => historyDetail(label, value)).join("")}
+          </div>
+          <div class="button-row">
+            <button class="btn-secondary" type="button" id="modalJsonBtn">Ver JSON</button>
+          </div>
+          <div id="modalJsonContainer"></div>
+        `;
+
+        $("modalJsonBtn").addEventListener("click", () => {
+          $("modalJsonContainer").innerHTML =
+            `<pre>${escapeHtml(JSON.stringify(normalized, null, 2))}</pre>`;
+        });
+
+        $("modalBackdrop").classList.add("visible");
+      }
+
+      function closeModal() {
+        $("modalBackdrop").classList.remove("visible");
+      }
+
+      function resetForm() {
+        fields.assetName.value = "";
+        fields.operationType.value = "Operación en bloque";
+        fields.quantity.value = "";
+        fields.currency.value = "USD";
+        fields.buyPrice.value = "";
+        fields.sellPrice.value = "";
+        fields.fees.value = "0";
+        fields.closeTime.value = "";
+        fields.notes.value = "";
+
+        lastCalculation = null;
+
+        $("totalCost").textContent = "—";
+        $("totalValue").textContent = "—";
+        $("netProfit").textContent = "—";
+        $("netProfit").className = "result-value neutral";
+        $("profitPercent").textContent = "Rentabilidad: —";
+        $("jsonEditor").value = "";
+
+        showStatus("Formulario limpiado.");
+      }
+
+      function exportHistory() {
+        const history = readHistory();
+
+        if (!history.length) {
+          showStatus("No hay registros para exportar.", "error");
+          return;
+        }
+
+        const blob = new Blob(
+          [JSON.stringify(history, null, 2)],
+          { type: "application/json;charset=utf-8" }
+        );
+
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = "historial-cartera.json";
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        URL.revokeObjectURL(url);
+
+        showStatus("Historial exportado.");
+      }
+
+      function clearHistory() {
+        const history = readHistory();
+
+        if (!history.length) {
+          showStatus("El historial ya está vacío.");
+          return;
+        }
+
+        if (!window.confirm("¿Seguro que quieres borrar todos los registros del historial? Esta acción no se puede deshacer.")) {
+          return;
+        }
+
+        try {
+          writeHistory([]);
+          renderHistory();
+          showStatus("Se ha borrado todo el historial.");
+        } catch {
+          showStatus("No se pudo borrar el historial.", "error");
+        }
+      }
+
+      function loadJsonEditor() {
+        try {
+          const data = JSON.parse($("jsonEditor").value);
+          if (!data || typeof data !== "object" || Array.isArray(data)) {
+            throw new Error("Formato no válido");
+          }
+
+          loadRecordIntoForm(data);
+        } catch {
+          showStatus("El JSON no es válido. Comprueba los datos e inténtalo de nuevo.", "error");
+        }
+      }
+
+      $("calculateBtn").addEventListener("click", () => {
+        const data = getFormData();
+
+        if (fields.quantity.value === "" ||
+            fields.buyPrice.value === "" ||
+            fields.sellPrice.value === "") {
+          showStatus("Introduce la cantidad y los precios de compra y cierre.", "error");
+          return;
+        }
+
+        renderResults(calculate(data));
+        showStatus("Cálculo actualizado.");
+      });
+
+      $("saveBtn").addEventListener("click", saveToHistory);
+      $("resetBtn").addEventListener("click", resetForm);
+      $("exportBtn").addEventListener("click", exportHistory);
+      $("clearHistoryBtn").addEventListener("click", clearHistory);
+      $("loadJsonBtn").addEventListener("click", loadJsonEditor);
+
+      $("formatJsonBtn").addEventListener("click", () => {
+        try {
+          const parsed = JSON.parse($("jsonEditor").value);
+          $("jsonEditor").value = JSON.stringify(parsed, null, 2);
+          showStatus("JSON formateado.");
+        } catch {
+          showStatus("El JSON no es válido.", "error");
+        }
+      });
+
+      $("historyList").addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-action]");
+        if (!button) return;
+
+        const { action, id } = button.dataset;
+        const record = readHistory().find((item) => String(item.id) === String(id));
+
+        if (!record) {
+          showStatus("No se encontró el registro.", "error");
+          return;
+        }
+
+        if (action === "details") showDetails(id);
+        if (action === "load") loadRecordIntoForm(normalizeRecord(record));
+
+        if (action === "delete") {
+          if (window.confirm("¿Quieres eliminar este registro?")) {
+            deleteRecord(id);
+          }
+        }
+      });
+
+      $("modalCloseBtn").addEventListener("click", closeModal);
+
+      $("modalBackdrop").addEventListener("click", (event) => {
+        if (event.target === $("modalBackdrop")) closeModal();
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") closeModal();
+      });
+
+      // Inicialización
+      renderHistory();
+      renderPositions();
+    })();
+  </script>
 </body>
 </html>
